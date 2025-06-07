@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級英単語クイズ（発音修正版）</title>
+    <title>英検2級英単語クイズ（累計スコア版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- ↓↓↓ ここで外部の単語リストファイルを読み込みます ↓↓↓ -->
     <script src="words.js" defer></script>
-    <!-- ↑↑↑ defer属性は、HTMLの解析後にスクリプトを実行するために重要です ↑↑↑ -->
     <style>
         body {
             font-family: 'Inter', 'Noto Sans JP', sans-serif;
@@ -127,7 +125,7 @@
             font-size: 0.875rem; /* text-sm */
             color: #4b5563; /* Tailwind gray-600 */
         }
-        #weeklyTotalScoreDisplay {
+        #cumulativeScoreDisplay {
             font-size: 1.25rem; /* text-xl */
             font-weight: 600; /* semibold */
             color: #059669; /* Tailwind green-600 */
@@ -156,7 +154,7 @@
             </div>
             
             <div id="targetScoreSettingArea">
-                <label for="targetScoreInput" class="japanese-text font-medium text-gray-700">今週の目標スコア:</label>
+                <label for="targetScoreInput" class="japanese-text font-medium text-gray-700">累計目標スコア:</label>
                 <input type="number" id="targetScoreInput" min="0">
                 <button id="saveTargetButton" class="font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">目標を設定</button>
                 <p id="currentTargetDisplay" class="japanese-text"></p>
@@ -173,10 +171,8 @@
             <p class="text-xs text-gray-500 mt-2 text-center japanese-text">過去最大10日間の日別最高スコアが表示されます。</p>
         </div>
 
-        <!-- Layout container: single column on mobile, two columns on large screens -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-6">
             
-            <!-- Left Column: Main Quiz -->
             <div class="lg:col-span-3 space-y-6">
                 <div id="quizArea">
                     <div id="progressArea" class="flex justify-between items-center mb-4">
@@ -191,12 +187,10 @@
                     </div>
 
                     <div id="options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                        <!-- 選択肢ボタンがここに挿入されます -->
-                    </div>
+                        </div>
 
                     <div id="feedback" class="feedback-message text-center text-2xl font-semibold mt-4 japanese-text">
-                        <!-- 正誤メッセージがここに表示されます -->
-                    </div>
+                        </div>
                     
                     <div class="action-buttons-container">
                         <button id="quitQuizButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text" style="display: none;">クイズを終了する</button>
@@ -207,13 +201,12 @@
                 <div id="resultArea" class="text-center py-8" style="display: none;">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4 japanese-text">クイズ終了！</h2>
                     <p id="finalScore" class="text-3xl font-semibold text-indigo-600 mb-2"></p>
-                    <p id="weeklyTotalScoreDisplay" class="mb-4"></p>
+                    <p id="cumulativeScoreDisplay" class="mb-4"></p>
                     <p id="resultMessage" class="text-lg text-gray-700 mb-6 japanese-text"></p>
                     <button id="restartButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">もう一度挑戦する</button>
                 </div>
             </div>
 
-            <!-- Right Column: Example Sentence -->
             <div class="lg:col-span-2">
                 <div id="exampleSentenceArea">
                     <p class="font-semibold japanese-text">例文:</p>
@@ -252,7 +245,7 @@
             const scoreDisplay = document.getElementById('score');
             const questionNumberDisplay = document.getElementById('questionNumber');
             const finalScoreDisplay = document.getElementById('finalScore');
-            const weeklyTotalScoreDisplay = document.getElementById('weeklyTotalScoreDisplay');
+            const cumulativeScoreDisplay = document.getElementById('cumulativeScoreDisplay');
             const resultMessageDisplay = document.getElementById('resultMessage');
             const speakButton = document.getElementById('speakButton');
             const exampleSentenceArea = document.getElementById('exampleSentenceArea');
@@ -272,26 +265,15 @@
                 console.warn("Web Speech API is not supported in this browser.");
                 if(speakButton) speakButton.style.display = 'none';
             } else {
-                 // --- 発音ボイス選択のロジック ---
                 function loadAndSetVoice() {
                     const voices = synth.getVoices();
                     englishVoice = voices.find(voice => voice.lang.startsWith('en-'));
-                    if (!englishVoice) {
-                        console.warn('No English voice found. Speech synthesis may use default.');
-                    }
+                    if (!englishVoice) console.warn('No English voice found.');
                 }
                 loadAndSetVoice();
                 if (synth.onvoiceschanged !== undefined) {
                     synth.onvoiceschanged = loadAndSetVoice;
                 }
-            }
-            
-            function getWeekIdentifier(date = new Date()) {
-                const d = new Date(date);
-                const dayOfWeek = d.getDay();
-                const diffToMonday = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-                const monday = new Date(d.setDate(diffToMonday));
-                return monday.toISOString().split('T')[0];
             }
 
             function shuffleArray(array) {
@@ -304,23 +286,20 @@
 
             function speakWord(wordToSpeak) {
                 if (synth && wordToSpeak) {
-                    if (synth.speaking) {
-                        synth.cancel();
-                    }
+                    if (synth.speaking) synth.cancel();
                     const utterance = new SpeechSynthesisUtterance(wordToSpeak);
                     utterance.lang = 'en-US';
-                    if (englishVoice) {
-                        utterance.voice = englishVoice;
-                    }
+                    if (englishVoice) utterance.voice = englishVoice;
                     utterance.pitch = 1;
                     utterance.rate = 0.9;
                     synth.speak(utterance);
                 }
             }
 
-            const PROGRESS_KEY = 'eikenQuizProgress';
+            const PROGRESS_KEY = 'eikenQuizDailyProgress'; // For graph
+            const CUMULATIVE_SCORE_KEY = 'eikenQuizCumulativeScore';
+            const CUMULATIVE_TARGET_KEY = 'eikenQuizCumulativeTarget';
             const MAX_PROGRESS_DAYS = 10;
-            const WEEKLY_TARGET_SCORE_KEY = 'eikenQuizWeeklyTargetScore';
 
             function getDailyProgress() {
                 const data = localStorage.getItem(PROGRESS_KEY);
@@ -347,46 +326,31 @@
             }
             
             function loadTargetScore() {
-                const currentWeekId = getWeekIdentifier();
-                const weeklyTargets = JSON.parse(localStorage.getItem(WEEKLY_TARGET_SCORE_KEY) || '{}');
-                const savedTarget = weeklyTargets[currentWeekId];
-
-                if (savedTarget !== undefined) {
+                const savedTarget = localStorage.getItem(CUMULATIVE_TARGET_KEY);
+                if (savedTarget !== null) {
                     targetScoreInput.value = savedTarget;
-                    currentTargetDisplay.textContent = `今週の目標: ${savedTarget}点`;
+                    currentTargetDisplay.textContent = `累計目標: ${savedTarget}点`;
                 } else {
                     targetScoreInput.value = '';
-                    currentTargetDisplay.textContent = `今週の目標: 未設定`;
+                    currentTargetDisplay.textContent = `累計目標: 未設定`;
                 }
-                targetScoreInput.max = QUESTIONS_PER_QUIZ * 7 * 5; 
-                targetScoreInput.min = 0;
             }
 
             function saveTargetScore() {
-                const currentWeekId = getWeekIdentifier();
                 const targetValue = parseInt(targetScoreInput.value);
-                const maxWeeklyTarget = QUESTIONS_PER_QUIZ * 7 * 5;
-
-                if (!isNaN(targetValue) && targetValue >= 0 && targetValue <= maxWeeklyTarget) {
-                    let weeklyTargets = JSON.parse(localStorage.getItem(WEEKLY_TARGET_SCORE_KEY) || '{}');
-                    weeklyTargets[currentWeekId] = targetValue;
-                    localStorage.setItem(WEEKLY_TARGET_SCORE_KEY, JSON.stringify(weeklyTargets));
-                    currentTargetDisplay.textContent = `今週の目標: ${targetValue}点`;
-                    alert('今週の目標スコアを保存しました！');
-                    if (graphDisplayArea.style.display === 'block') {
-                        renderProgressChart();
-                    }
+                if (!isNaN(targetValue) && targetValue >= 0) {
+                    localStorage.setItem(CUMULATIVE_TARGET_KEY, targetValue);
+                    currentTargetDisplay.textContent = `累計目標: ${targetValue}点`;
+                    alert('累計目標スコアを保存しました！');
                 } else {
-                    alert(`0から${maxWeeklyTarget}までの有効な目標スコアを入力してください。`);
+                    alert(`有効な目標スコア（0以上の数字）を入力してください。`);
                 }
             }
 
             function renderProgressChart() {
                 const progressData = getDailyProgress();
                 
-                if (progressChartInstance) {
-                    progressChartInstance.destroy();
-                }
+                if (progressChartInstance) progressChartInstance.destroy();
                 if (!progressChartCanvas) return;
                 const ctx = progressChartCanvas.getContext('2d');
                 
@@ -407,10 +371,7 @@
                 }];
 
                 let yMax = QUESTIONS_PER_QUIZ;
-                
-                if (dailyScores.length > 0) {
-                    yMax = Math.max(yMax, ...dailyScores.map(s => s + 2));
-                }
+                if (dailyScores.length > 0) yMax = Math.max(yMax, ...dailyScores.map(s => s + 2));
 
                 if (progressData.length === 0) {
                      ctx.clearRect(0, 0, progressChartCanvas.width, progressChartCanvas.height);
@@ -487,12 +448,8 @@
                 const buttons = optionsContainer.querySelectorAll('.option-button');
                 buttons.forEach(btn => {
                     btn.disabled = true;
-                    if (btn.textContent.toLowerCase() === correctAnswer.toLowerCase()) {
-                        btn.classList.add('correct');
-                    }
-                    else if (btn === button && selectedChoice.toLowerCase() !== correctAnswer.toLowerCase()) {
-                        btn.classList.add('incorrect');
-                    }
+                    if (btn.textContent.toLowerCase() === correctAnswer.toLowerCase()) btn.classList.add('correct');
+                    else if (btn === button) btn.classList.add('incorrect');
                 });
 
                 speakWord(correctAnswer); 
@@ -522,45 +479,39 @@
             function showResults() {
                 quizArea.style.display = 'none';
                 resultArea.style.display = 'block';
-                finalScoreDisplay.textContent = `今回のスコア: ${score} / ${shuffledWords.length}`;
-                saveDailyProgress(score);
                 
-                const currentWeekId = getWeekIdentifier();
-                const dailyProgress = getDailyProgress();
-                let currentWeekScoreSum = 0;
-                dailyProgress.forEach(entry => {
-                    if (getWeekIdentifier(new Date(entry.date)) === currentWeekId) {
-                        currentWeekScoreSum += entry.score;
-                    }
-                });
-                weeklyTotalScoreDisplay.textContent = `今週の累計スコア: ${currentWeekScoreSum}点`;
+                // Update scores
+                saveDailyProgress(score); // Save daily highest score for the graph
+                let cumulativeScore = parseInt(localStorage.getItem(CUMULATIVE_SCORE_KEY) || '0');
+                cumulativeScore += score;
+                localStorage.setItem(CUMULATIVE_SCORE_KEY, cumulativeScore);
 
-                const weeklyTargets = JSON.parse(localStorage.getItem(WEEKLY_TARGET_SCORE_KEY) || '{}');
-                const weeklyTargetForCurrentWeek = parseInt(weeklyTargets[currentWeekId] || '0');
-                
+                // Display scores
+                finalScoreDisplay.textContent = `今回のスコア: ${score} / ${shuffledWords.length}`;
+                cumulativeScoreDisplay.textContent = `総合累計スコア: ${cumulativeScore}点`;
+
+                // Display messages
+                const cumulativeTarget = parseInt(localStorage.getItem(CUMULATIVE_TARGET_KEY) || '0');
                 let message = "";
                 const percentage = (score / shuffledWords.length) * 100;
 
-                if (percentage >= 80) {
-                    message = "素晴らしいです！よくできました！🥳";
-                } else if (percentage >= 60) {
-                    message = "よく頑張りました！もう少し！ ";
-                } else if (percentage >= 40) {
-                    message = "まずまずですね。復習も頑張りましょう！💪";
-                } else {
-                    message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
-                }
+                if (percentage >= 80) message = "素晴らしいです！よくできました！🥳";
+                else if (percentage >= 60) message = "よく頑張りました！もう少し！👍";
+                else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
+                else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
 
-                if (weeklyTargetForCurrentWeek > 0) {
-                    if (currentWeekScoreSum >= weeklyTargetForCurrentWeek) {
-                        message += `\n\n今週の目標 (${weeklyTargetForCurrentWeek}点) 達成です！おめでとうございます！🎯`;
+                if (cumulativeTarget > 0) {
+                    if (cumulativeScore >= cumulativeTarget) {
+                        message += `\n\n累計目標 (${cumulativeTarget}点) 達成です！おめでとうございます！🎯`;
                     } else {
-                        message += `\n\n今週の目標 (${weeklyTargetForCurrentWeek}点) まであと ${weeklyTargetForCurrentWeek - currentWeekScoreSum}点です。`;
+                        message += `\n\n累計目標 (${cumulativeTarget}点) まであと ${cumulativeTarget - cumulativeScore}点です。`;
                     }
                 }
 
                 resultMessageDisplay.textContent = message;
                 resultMessageDisplay.style.whiteSpace = 'pre-wrap';
+                
+                // Hide unnecessary elements
                 if(speakButton) speakButton.style.display = 'none';
                 if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
                 if(graphDisplayArea) graphDisplayArea.style.display = 'none';
@@ -608,4 +559,3 @@
     </script>
 </body>
 </html>
- 
