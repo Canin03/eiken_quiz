@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英検2級英単語クイズ（発音修正版）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ↓↓↓ ここで外部の単語リストファイルを読み込みます ↓↓↓ -->
+    <script src="words.js" defer></script>
+    <!-- ↑↑↑ defer属性は、HTMLの解析後にスクリプトを実行するために重要です ↑↑↑ -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+        .quiz-container {
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #f9fafb; /* Tailwind gray-50 */
+            border-radius: 0.75rem; /* Tailwind rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Tailwind shadow-lg */
+        }
+        .option-button {
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+        .option-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background-color: #e5e7eb; /* Tailwind gray-200 */
+        }
+        .option-button.correct {
+            background-color: #10b981; /* Tailwind green-500 */
+            color: white;
+            border-color: #059669; /* Tailwind green-600 */
+        }
+        .option-button.incorrect {
+            background-color: #ef4444; /* Tailwind red-500 */
+            color: white;
+            border-color: #dc2626; /* Tailwind red-600 */
+        }
+        .option-button:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+        .feedback-message {
+            min-height: 2.25rem; /* text-2xlの高さに合わせて調整 */
+        }
+        .japanese-text {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+        #speakButton {
+            display: none; /* Initially hidden */
+            background-color: #8b5cf6; /* Tailwind violet-500 */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+        #speakButton:hover {
+            background-color: #7c3aed; /* Tailwind violet-600 */
+        }
+        #exampleSentenceArea {
+            display: none; /* Initially hidden */
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #eef2ff; /* Tailwind indigo-50 */
+            border-left: 4px solid #6366f1; /* Tailwind indigo-500 */
+            border-radius: 0.375rem; /* Tailwind rounded-md */
+            height: 100%; /* Take full height of grid cell on large screens */
+        }
+        @media (min-width: 1024px) {
+             #exampleSentenceArea {
+                margin-top: 0;
+             }
+        }
+        #exampleSentenceArea p {
+            margin-bottom: 0.5rem;
+        }
+        #exampleSentenceArea .example-en {
+            font-weight: 500;
+            color: #4338ca; /* Tailwind indigo-700 */
+            font-size: 1.125rem; /* text-lg */
+        }
+        #exampleSentenceArea .example-ja {
+            font-size: 1rem; /* text-base */
+            color: #4f46e5; /* Tailwind indigo-600 */
+        }
+        #graphDisplayArea {
+            margin-top: 1.5rem;
+            padding: 1.5rem;
+            background-color: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .action-buttons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        #targetScoreSettingArea {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        #targetScoreInput {
+            width: 80px;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #d1d5db; /* Tailwind gray-300 */
+            text-align: center;
+            margin: 0 0.5rem;
+        }
+        #saveTargetButton {
+            background-color: #2563eb; /* Tailwind blue-600 */
+            color: white;
+        }
+        #saveTargetButton:hover {
+            background-color: #1d4ed8; /* Tailwind blue-700 */
+        }
+        #currentTargetDisplay {
+            margin-top: 0.5rem;
+            font-size: 0.875rem; /* text-sm */
+            color: #4b5563; /* Tailwind gray-600 */
+        }
+        #weeklyTotalScoreDisplay {
+            font-size: 1.25rem; /* text-xl */
+            font-weight: 600; /* semibold */
+            color: #059669; /* Tailwind green-600 */
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .action-buttons-container {
+                flex-direction: row;
+                justify-content: center;
+            }
+            .action-buttons-container button {
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 px-4 py-8">
+    <div class="quiz-container w-full max-w-5xl mx-auto">
+        <header class="mb-4 text-center">
+            <div class="flex justify-center items-center gap-x-3 mb-4">
+                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <div class="text-3xl">🦉</div>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 japanese-text">英検2級英単語クイズ</h1>
+            </div>
+            
+            <div id="targetScoreSettingArea">
+                <label for="targetScoreInput" class="japanese-text font-medium text-gray-700">今週の目標スコア:</label>
+                <input type="number" id="targetScoreInput" min="0">
+                <button id="saveTargetButton" class="font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">目標を設定</button>
+                <p id="currentTargetDisplay" class="japanese-text"></p>
+            </div>
+
+            <button id="toggleGraphButton" class="mt-4 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
+                進捗グラフを見る
+            </button>
+        </header>
+
+        <div id="graphDisplayArea" style="display: none;">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3 japanese-text text-center">学習進捗グラフ</h2>
+            <canvas id="progressChart"></canvas>
+            <p class="text-xs text-gray-500 mt-2 text-center japanese-text">過去最大10日間の日別最高スコアが表示されます。</p>
+        </div>
+
+        <!-- Layout container: single column on mobile, two columns on large screens -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-6">
+            
+            <!-- Left Column: Main Quiz -->
+            <div class="lg:col-span-3 space-y-6">
+                <div id="quizArea">
+                    <div id="progressArea" class="flex justify-between items-center mb-4">
+                        <p id="questionNumber" class="text-xl font-semibold text-indigo-600 japanese-text"></p>
+                        <p id="score" class="text-xl font-semibold text-green-600 japanese-text">スコア: 0</p>
+                    </div>
+
+                    <div id="wordDisplay" class="text-center p-6 bg-white rounded-lg shadow">
+                        <p id="word" class="text-4xl font-bold text-gray-700 japanese-text"></p>
+                        <p class="text-sm text-gray-500 mt-2 japanese-text">この単語の正しい英語のスペルを選んでください</p>
+                        <button id="speakButton">🔊 発音を聞く</button>
+                    </div>
+
+                    <div id="options" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                        <!-- 選択肢ボタンがここに挿入されます -->
+                    </div>
+
+                    <div id="feedback" class="feedback-message text-center text-2xl font-semibold mt-4 japanese-text">
+                        <!-- 正誤メッセージがここに表示されます -->
+                    </div>
+                    
+                    <div class="action-buttons-container">
+                        <button id="quitQuizButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text" style="display: none;">クイズを終了する</button>
+                        <button id="nextButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text" style="display: none;">次の問題へ</button>
+                    </div>
+                </div>
+
+                <div id="resultArea" class="text-center py-8" style="display: none;">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4 japanese-text">クイズ終了！</h2>
+                    <p id="finalScore" class="text-3xl font-semibold text-indigo-600 mb-2"></p>
+                    <p id="weeklyTotalScoreDisplay" class="mb-4"></p>
+                    <p id="resultMessage" class="text-lg text-gray-700 mb-6 japanese-text"></p>
+                    <button id="restartButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">もう一度挑戦する</button>
+                </div>
+            </div>
+
+            <!-- Right Column: Example Sentence -->
+            <div class="lg:col-span-2">
+                <div id="exampleSentenceArea">
+                    <p class="font-semibold japanese-text">例文:</p>
+                    <p id="exampleEn" class="example-en"></p>
+                    <p id="exampleJa" class="example-ja japanese-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            if (typeof wordList === 'undefined' || wordList.length === 0) {
+                alert('単語ファイル(words.js)の読み込みに失敗しました。同じフォルダにファイルがあるか、内容が空でないか確認してください。');
+                return;
+            }
+            
+            const QUESTIONS_PER_QUIZ = 20;
+
+            let currentQuestionIndex = 0;
+            let score = 0;
+            let shuffledWords = [];
+            let currentCorrectAnswer = "";
+            let currentExample = null;
+            let progressChartInstance = null;
+            let englishVoice = null;
+
+            const quizArea = document.getElementById('quizArea');
+            const resultArea = document.getElementById('resultArea');
+            const wordDisplay = document.getElementById('word');
+            const optionsContainer = document.getElementById('options');
+            const feedbackDisplay = document.getElementById('feedback');
+            const nextButton = document.getElementById('nextButton');
+            const restartButton = document.getElementById('restartButton');
+            const scoreDisplay = document.getElementById('score');
+            const questionNumberDisplay = document.getElementById('questionNumber');
+            const finalScoreDisplay = document.getElementById('finalScore');
+            const weeklyTotalScoreDisplay = document.getElementById('weeklyTotalScoreDisplay');
+            const resultMessageDisplay = document.getElementById('resultMessage');
+            const speakButton = document.getElementById('speakButton');
+            const exampleSentenceArea = document.getElementById('exampleSentenceArea');
+            const exampleEnDisplay = document.getElementById('exampleEn');
+            const exampleJaDisplay = document.getElementById('exampleJa');
+            const toggleGraphButton = document.getElementById('toggleGraphButton');
+            const graphDisplayArea = document.getElementById('graphDisplayArea');
+            const progressChartCanvas = document.getElementById('progressChart');
+            const quitQuizButton = document.getElementById('quitQuizButton');
+            
+            const targetScoreInput = document.getElementById('targetScoreInput');
+            const saveTargetButton = document.getElementById('saveTargetButton');
+            const currentTargetDisplay = document.getElementById('currentTargetDisplay');
+
+            const synth = window.speechSynthesis;
+            if (!synth) {
+                console.warn("Web Speech API is not supported in this browser.");
+                if(speakButton) speakButton.style.display = 'none';
+            } else {
+                 // --- 発音ボイス選択のロジック ---
+                function loadAndSetVoice() {
+                    const voices = synth.getVoices();
+                    englishVoice = voices.find(voice => voice.lang.startsWith('en-'));
+                    if (!englishVoice) {
+                        console.warn('No English voice found. Speech synthesis may use default.');
+                    }
+                }
+                loadAndSetVoice();
+                if (synth.onvoiceschanged !== undefined) {
+                    synth.onvoiceschanged = loadAndSetVoice;
+                }
+            }
+            
+            function getWeekIdentifier(date = new Date()) {
+                const d = new Date(date);
+                const dayOfWeek = d.getDay();
+                const diffToMonday = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                const monday = new Date(d.setDate(diffToMonday));
+                return monday.toISOString().split('T')[0];
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            function speakWord(wordToSpeak) {
+                if (synth && wordToSpeak) {
+                    if (synth.speaking) {
+                        synth.cancel();
+                    }
+                    const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+                    utterance.lang = 'en-US';
+                    if (englishVoice) {
+                        utterance.voice = englishVoice;
+                    }
+                    utterance.pitch = 1;
+                    utterance.rate = 0.9;
+                    synth.speak(utterance);
+                }
+            }
+
+            const PROGRESS_KEY = 'eikenQuizProgress';
+            const MAX_PROGRESS_DAYS = 10;
+            const WEEKLY_TARGET_SCORE_KEY = 'eikenQuizWeeklyTargetScore';
+
+            function getDailyProgress() {
+                const data = localStorage.getItem(PROGRESS_KEY);
+                return data ? JSON.parse(data) : [];
+            }
+
+            function saveDailyProgress(currentScore) {
+                const today = new Date().toISOString().split('T')[0];
+                let progress = getDailyProgress();
+                const todayEntryIndex = progress.findIndex(entry => entry.date === today);
+
+                if (todayEntryIndex > -1) {
+                    if (currentScore > progress[todayEntryIndex].score) {
+                        progress[todayEntryIndex].score = currentScore;
+                    }
+                } else {
+                    progress.push({ date: today, score: currentScore });
+                }
+                progress.sort((a, b) => new Date(a.date) - new Date(b.date));
+                if (progress.length > MAX_PROGRESS_DAYS) {
+                    progress = progress.slice(progress.length - MAX_PROGRESS_DAYS);
+                }
+                localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+            }
+            
+            function loadTargetScore() {
+                const currentWeekId = getWeekIdentifier();
+                const weeklyTargets = JSON.parse(localStorage.getItem(WEEKLY_TARGET_SCORE_KEY) || '{}');
+                const savedTarget = weeklyTargets[currentWeekId];
+
+                if (savedTarget !== undefined) {
+                    targetScoreInput.value = savedTarget;
+                    currentTargetDisplay.textContent = `今週の目標: ${savedTarget}点`;
+                } else {
+                    targetScoreInput.value = '';
+                    currentTargetDisplay.textContent = `今週の目標: 未設定`;
+                }
+                targetScoreInput.max = QUESTIONS_PER_QUIZ * 7 * 5; 
+                targetScoreInput.min = 0;
+            }
+
+            function saveTargetScore() {
+                const currentWeekId = getWeekIdentifier();
+                const targetValue = parseInt(targetScoreInput.value);
+                const maxWeeklyTarget = QUESTIONS_PER_QUIZ * 7 * 5;
+
+                if (!isNaN(targetValue) && targetValue >= 0 && targetValue <= maxWeeklyTarget) {
+                    let weeklyTargets = JSON.parse(localStorage.getItem(WEEKLY_TARGET_SCORE_KEY) || '{}');
+                    weeklyTargets[currentWeekId] = targetValue;
+                    localStorage.setItem(WEEKLY_TARGET_SCORE_KEY, JSON.stringify(weeklyTargets));
+                    currentTargetDisplay.textContent = `今週の目標: ${targetValue}点`;
+                    alert('今週の目標スコアを保存しました！');
+                    if (graphDisplayArea.style.display === 'block') {
+                        renderProgressChart();
+                    }
+                } else {
+                    alert(`0から${maxWeeklyTarget}までの有効な目標スコアを入力してください。`);
+                }
+            }
+
+            function renderProgressChart() {
+                const progressData = getDailyProgress();
+                
+                if (progressChartInstance) {
+                    progressChartInstance.destroy();
+                }
+                if (!progressChartCanvas) return;
+                const ctx = progressChartCanvas.getContext('2d');
+                
+                const labels = progressData.map(entry => {
+                    const dateObj = new Date(entry.date);
+                    return `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                });
+                const dailyScores = progressData.map(entry => entry.score);
+
+                const datasets = [{
+                    label: '日別最高スコア',
+                    data: dailyScores,
+                    backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                    borderColor: 'rgba(79, 70, 229, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    hoverBackgroundColor: 'rgba(99, 102, 241, 0.8)'
+                }];
+
+                let yMax = QUESTIONS_PER_QUIZ;
+                
+                if (dailyScores.length > 0) {
+                    yMax = Math.max(yMax, ...dailyScores.map(s => s + 2));
+                }
+
+                if (progressData.length === 0) {
+                     ctx.clearRect(0, 0, progressChartCanvas.width, progressChartCanvas.height);
+                     ctx.font = "16px 'Noto Sans JP', sans-serif";
+                     ctx.fillStyle = "#6b7280";
+                     ctx.textAlign = "center";
+                     ctx.fillText("まだ記録がありません。", progressChartCanvas.width / 2, 50);
+                    return;
+                }
+                
+                progressChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: labels, datasets: datasets },
+                    options: {
+                        responsive: true, maintainAspectRatio: true,
+                        scales: { y: { beginAtZero: true, max: yMax, ticks: { stepSize: Math.max(1, Math.ceil(yMax / 5)) } }, x: { ticks: { font: { family: "'Inter', 'Noto Sans JP', sans-serif" } } } },
+                        plugins: { legend: { display: true, labels: { font: { family: "'Inter', 'Noto Sans JP', sans-serif" } } }, tooltip: { titleFont: { family: "'Inter', 'Noto Sans JP', sans-serif" }, bodyFont: { family: "'Inter', 'Noto Sans JP', sans-serif" } } }
+                    }
+                });
+            }
+
+            function startQuiz() {
+                let allWordsShuffled = shuffleArray([...wordList]);
+                shuffledWords = allWordsShuffled.slice(0, QUESTIONS_PER_QUIZ);
+
+                currentQuestionIndex = 0;
+                score = 0;
+                currentCorrectAnswer = "";
+                currentExample = null;
+                scoreDisplay.textContent = `スコア: ${score}`;
+                quizArea.style.display = 'block';
+                resultArea.style.display = 'none';
+                if(graphDisplayArea) graphDisplayArea.style.display = 'none';
+                toggleGraphButton.textContent = '進捗グラフを見る';
+                loadTargetScore();
+
+                nextButton.style.display = 'none';
+                if(quitQuizButton) quitQuizButton.style.display = 'inline-block';
+                if(speakButton) speakButton.style.display = 'none';
+                if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
+                feedbackDisplay.textContent = '';
+                loadQuestion();
+            }
+
+            function loadQuestion() {
+                if (currentQuestionIndex < shuffledWords.length) {
+                    const currentQuestion = shuffledWords[currentQuestionIndex];
+                    currentCorrectAnswer = currentQuestion.answer;
+                    currentExample = currentQuestion.example;
+                    wordDisplay.textContent = currentQuestion.word;
+                    questionNumberDisplay.textContent = `問題 ${currentQuestionIndex + 1} / ${shuffledWords.length}`;
+                    optionsContainer.innerHTML = '';
+
+                    const shuffledChoices = shuffleArray([...currentQuestion.choices]);
+                    shuffledChoices.forEach(choice => {
+                        const button = document.createElement('button');
+                        button.textContent = choice;
+                        button.classList.add('option-button', 'w-full', 'bg-white', 'text-gray-700', 'font-semibold', 'py-3', 'px-4', 'border', 'border-gray-300', 'rounded-lg', 'shadow', 'text-lg');
+                        button.setAttribute('lang', 'en');
+                        button.onclick = () => selectAnswer(choice, currentQuestion.answer, button);
+                        optionsContainer.appendChild(button);
+                    });
+                    feedbackDisplay.textContent = '';
+                    nextButton.style.display = 'none';
+                    if(quitQuizButton) quitQuizButton.style.display = 'inline-block';
+                    if(speakButton) speakButton.style.display = 'none';
+                    if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
+                } else {
+                    showResults();
+                }
+            }
+
+            function selectAnswer(selectedChoice, correctAnswer, button) {
+                const buttons = optionsContainer.querySelectorAll('.option-button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    if (btn.textContent.toLowerCase() === correctAnswer.toLowerCase()) {
+                        btn.classList.add('correct');
+                    }
+                    else if (btn === button && selectedChoice.toLowerCase() !== correctAnswer.toLowerCase()) {
+                        btn.classList.add('incorrect');
+                    }
+                });
+
+                speakWord(correctAnswer); 
+                if(speakButton) speakButton.style.display = 'inline-block'; 
+
+                if (selectedChoice.toLowerCase() === correctAnswer.toLowerCase()) {
+                    score++;
+                    feedbackDisplay.textContent = '正解！🎉';
+                    feedbackDisplay.classList.remove('text-red-500');
+                    feedbackDisplay.classList.add('text-green-500');
+                    if (currentExample && exampleSentenceArea && exampleEnDisplay && exampleJaDisplay) {
+                        exampleSentenceArea.style.display = 'block';
+                        exampleEnDisplay.textContent = currentExample.en;
+                        exampleJaDisplay.textContent = currentExample.ja;
+                    }
+                } else {
+                    feedbackDisplay.textContent = `不正解... 正解は「${correctAnswer}」です。`;
+                    feedbackDisplay.classList.remove('text-green-500');
+                    feedbackDisplay.classList.add('text-red-500');
+                    if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
+                }
+                scoreDisplay.textContent = `スコア: ${score}`;
+                nextButton.style.display = 'block';
+                if(quitQuizButton) quitQuizButton.style.display = 'none';
+            }
+
+            function showResults() {
+                quizArea.style.display = 'none';
+                resultArea.style.display = 'block';
+                finalScoreDisplay.textContent = `今回のスコア: ${score} / ${shuffledWords.length}`;
+                saveDailyProgress(score);
+                
+                const currentWeekId = getWeekIdentifier();
+                const dailyProgress = getDailyProgress();
+                let currentWeekScoreSum = 0;
+                dailyProgress.forEach(entry => {
+                    if (getWeekIdentifier(new Date(entry.date)) === currentWeekId) {
+                        currentWeekScoreSum += entry.score;
+                    }
+                });
+                weeklyTotalScoreDisplay.textContent = `今週の累計スコア: ${currentWeekScoreSum}点`;
+
+                const weeklyTargets = JSON.parse(localStorage.getItem(WEEKLY_TARGET_SCORE_KEY) || '{}');
+                const weeklyTargetForCurrentWeek = parseInt(weeklyTargets[currentWeekId] || '0');
+                
+                let message = "";
+                const percentage = (score / shuffledWords.length) * 100;
+
+                if (percentage >= 80) {
+                    message = "素晴らしいです！よくできました！🥳";
+                } else if (percentage >= 60) {
+                    message = "よく頑張りました！もう少し！ ";
+                } else if (percentage >= 40) {
+                    message = "まずまずですね。復習も頑張りましょう！💪";
+                } else {
+                    message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
+                }
+
+                if (weeklyTargetForCurrentWeek > 0) {
+                    if (currentWeekScoreSum >= weeklyTargetForCurrentWeek) {
+                        message += `\n\n今週の目標 (${weeklyTargetForCurrentWeek}点) 達成です！おめでとうございます！🎯`;
+                    } else {
+                        message += `\n\n今週の目標 (${weeklyTargetForCurrentWeek}点) まであと ${weeklyTargetForCurrentWeek - currentWeekScoreSum}点です。`;
+                    }
+                }
+
+                resultMessageDisplay.textContent = message;
+                resultMessageDisplay.style.whiteSpace = 'pre-wrap';
+                if(speakButton) speakButton.style.display = 'none';
+                if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
+                if(graphDisplayArea) graphDisplayArea.style.display = 'none';
+                toggleGraphButton.textContent = '進捗グラフを見る';
+                if(quitQuizButton) quitQuizButton.style.display = 'none';
+            }
+
+            nextButton.addEventListener('click', () => {
+                currentQuestionIndex++;
+                loadQuestion();
+            });
+
+            restartButton.addEventListener('click', startQuiz);
+
+            if(speakButton){
+                speakButton.addEventListener('click', () => {
+                    speakWord(currentCorrectAnswer);
+                });
+            }
+
+            toggleGraphButton.addEventListener('click', () => {
+                if (graphDisplayArea) {
+                    const isHidden = graphDisplayArea.style.display === 'none';
+                    graphDisplayArea.style.display = isHidden ? 'block' : 'none';
+                    toggleGraphButton.textContent = isHidden ? 'グラフを隠す' : '進捗グラフを見る';
+                    if (isHidden) {
+                        renderProgressChart();
+                    }
+                }
+            });
+
+            if(quitQuizButton) {
+                quitQuizButton.addEventListener('click', () => {
+                    showResults();
+                });
+            }
+            
+            if(saveTargetButton) {
+                saveTargetButton.addEventListener('click', saveTargetScore);
+            }
+
+            loadTargetScore();
+            startQuiz();
+        });
+    </script>
+</body>
+</html>
+ 
