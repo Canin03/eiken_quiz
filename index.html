@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級英単語クイズ（安定版）</title>
+    <title>英検2級英単語クイズ（音声機能改善版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英単語クイズ">
-    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text= ">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text=🦉">
     <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/c7d2fe/3730a3?text=🦉">
     <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/c7d2fe/3730a3?text=🦉">
     <!-- ▲▲▲ ホーム画面アイコン用の設定 ▲▲▲ -->
@@ -215,7 +215,7 @@
             } else {
                 function loadAndSetVoice() {
                     const voices = synth.getVoices();
-                    englishVoice = voices.find(voice => voice.lang.startsWith('en-'));
+                    englishVoice = voices.find(voice => voice.lang === 'en-US') || voices.find(voice => voice.lang.startsWith('en-'));
                     if (!englishVoice) console.warn('No English voice found.');
                 }
                 loadAndSetVoice();
@@ -233,15 +233,23 @@
             }
 
             function speakWord(wordToSpeak) {
-                if (synth && wordToSpeak) {
-                    if (synth.speaking) synth.cancel();
-                    const utterance = new SpeechSynthesisUtterance(wordToSpeak);
-                    utterance.lang = 'en-US';
-                    if (englishVoice) utterance.voice = englishVoice;
-                    utterance.pitch = 1;
-                    utterance.rate = 0.9;
-                    synth.speak(utterance);
+                if (!synth || !wordToSpeak) return;
+                
+                // If voices are not loaded yet, try to load them again.
+                if (!englishVoice && synth.getVoices().length) {
+                    loadAndSetVoice();
                 }
+
+                if (synth.speaking) synth.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(wordToSpeak);
+                utterance.lang = 'en-US';
+                if (englishVoice) {
+                    utterance.voice = englishVoice;
+                }
+                utterance.pitch = 1;
+                utterance.rate = 0.9;
+                synth.speak(utterance);
             }
 
             // LocalStorage Keys
@@ -500,7 +508,7 @@
                 const percentage = (score / shuffledWords.length) * 100;
 
                 if (percentage >= 80) message = "素晴らしいです！よくできました！🥳";
-                else if (percentage >= 60) message = "よく頑張りました！もう少し！👍";
+                else if (percentage >= 60) message = "よく頑張りました！もう少し！ ";
                 else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
                 else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
 
