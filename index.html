@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級英単語クイズ（月間スコア機能付き）</title>
+    <title>英検2級英単語クイズ（苦手克服ボーナス機能付き）</title>
+    
+    <!-- ▼▼▼ ホーム画面アイコン用の設定を追加 ▼▼▼ -->
+    <meta name="apple-mobile-web-app-title" content="英単語クイズ">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text= ">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/c7d2fe/3730a3?text=🦉">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/c7d2fe/3730a3?text=🦉">
+    <!-- ▲▲▲ ホーム画面アイコン用の設定を追加 ▲▲▲ -->
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -486,17 +494,28 @@
                     showResults();
                 }
             }
+            
+            async function handleAnswer(isCorrect, correctAnswer) {
+                const wasMissedWord = missedWordsStats[correctAnswer] && missedWordsStats[correctAnswer] >= MISSED_THRESHOLD;
+                await updateWordStat(correctAnswer, isCorrect);
 
-            function handleAnswer(isCorrect, correctAnswer) {
-                updateWordStat(correctAnswer, isCorrect);
                 speakWord(correctAnswer); 
                 if(speakButton) speakButton.style.display = 'inline-block'; 
 
                 if (isCorrect) {
-                    score++;
-                    feedbackDisplay.textContent = '正解！🎉';
+                    let points = 1;
+                    let feedbackText = '正解！🎉';
+                    
+                    if (wasMissedWord) {
+                        points++; 
+                        feedbackText = '苦手克服！+2点ボーナス！🥳';
+                    }
+                    
+                    score += points;
+                    feedbackDisplay.textContent = feedbackText;
                     feedbackDisplay.classList.remove('text-red-500');
                     feedbackDisplay.classList.add('text-green-500');
+
                     if (currentExample && exampleSentenceArea && exampleEnDisplay && exampleJaDisplay) {
                         exampleSentenceArea.style.display = 'block';
                         exampleEnDisplay.textContent = currentExample.en;
@@ -508,6 +527,7 @@
                     feedbackDisplay.classList.add('text-red-500');
                     if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
                 }
+
                 scoreDisplay.textContent = `スコア: ${score}`;
                 nextButton.style.display = 'block';
                 if(quitQuizButton) quitQuizButton.style.display = 'none';
@@ -610,3 +630,4 @@
     </script>
 </body>
 </html>
+ 
