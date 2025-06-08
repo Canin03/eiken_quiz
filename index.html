@@ -15,8 +15,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- words.jsを先に読み込む -->
-    <script src="words.js"></script>
     <style>
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
         .quiz-container { margin: 2rem auto; padding: 2rem; background-color: #f9fafb; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
@@ -134,12 +132,45 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, increment, deleteField, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
+        // --- 単語リストを直接ここに定義 ---
+        const wordList = [
+            { word: "獲得する", choices: ["acquire", "require", "inquire", "admire"], answer: "acquire", example: { en: "She managed to acquire a rare copy of the book.", ja: "彼女はその本の珍しい版を手に入れることができた。" } },
+            { word: "利益", choices: ["benefit", "profit", "benign", "belief"], answer: "benefit", example: { en: "The new system will be of great benefit to the company.", ja: "新しいシステムは会社に大きな利益をもたらすだろう。" } },
+            { word: "気候", choices: ["climate", "weather", "climax", "climb"], answer: "climate", example: { en: "The climate in this region is very mild.", ja: "この地域の気候は非常に穏やかだ。" } },
+            { word: "定義する", choices: ["define", "devine", "defense", "definition"], answer: "define", example: { en: "It's difficult to define the concept of 'happiness'.", ja: "「幸福」という概念を定義するのは難しい。" } },
+            { word: "探検する", choices: ["explore", "export", "explode", "express"], answer: "explore", example: { en: "They decided to explore the uncharted island.", ja: "彼らは未知の島を探検することに決めた。" } },
+            { word: "特徴", choices: ["feature", "future", "feather", "fracture"], answer: "feature", example: { en: "One notable feature of this phone is its long battery life.", ja: "この電話の注目すべき特徴の一つはバッテリーの持ちが良いことです。" } },
+            { word: "地球規模の", choices: ["global", "local", "noble", "globe"], answer: "global", example: { en: "Global warming is a serious issue.", ja: "地球温暖化は深刻な問題だ。" } },
+            { word: "影響", choices: ["impact", "compact", "effect", "inspect"], answer: "impact", example: { en: "The new law will have a significant impact on the economy.", ja: "新しい法律は経済に大きな影響を与えるだろう。" } },
+            { word: "正当化する", choices: ["justify", "justice", "adjust", "testify"], answer: "justify", example: { en: "He tried to justify his actions, but no one believed him.", ja: "彼は自分の行動を正当化しようとしたが、誰も彼を信じなかった。" } },
+            { word: "開始する", choices: ["launch", "lunch", "lounge", "branch"], answer: "launch", example: { en: "The company plans to launch a new product next month.", ja: "その会社は来月新製品を発売する予定だ。" } },
+            { word: "維持する", choices: ["maintain", "contain", "remain", "mainland"], answer: "maintain", example: { en: "It's important to maintain a healthy lifestyle.", ja: "健康的な生活習慣を維持することは重要だ。" } },
+            { word: "交渉する", choices: ["negotiate", "navigate", "neglect", "initiate"], answer: "negotiate", example: { en: "They were able to negotiate a peaceful settlement.", ja: "彼らは平和的な解決策を交渉することができた。" } },
+            { word: "占める", choices: ["occupy", "occur", "copy", "octopy"], answer: "occupy", example: { en: "The new building will occupy a large area.", ja: "新しい建物は広い面積を占めることになるだろう。" } },
+            { word: "促進する", choices: ["promote", "promise", "remote", "motion"], answer: "promote", example: { en: "The campaign aims to promote environmental awareness.", ja: "そのキャンペーンは環境意識を高めることを目的としている。" } },
+            { word: "減らす", choices: ["reduce", "deduce", "reuse", "refuse"], answer: "reduce", example: { en: "We need to reduce our carbon footprint.", ja: "私たちは二酸化炭素排出量を減らす必要がある。" } },
+            { word: "重要な", choices: ["significant", "magnificent", "signature", "insignificant"], answer: "significant", example: { en: "This is a significant discovery in the field of medicine.", ja: "これは医学分野における重要な発見だ。" } },
+            { word: "移動させる", choices: ["transfer", "transmit", "transform", "transport"], answer: "transfer", example: { en: "He will transfer to a new department next week.", ja: "彼は来週新しい部署に異動する。" } },
+            { word: "独特の", choices: ["unique", "united", "antique", "unify"], answer: "unique", example: { en: "This artist has a very unique style.", ja: "この芸術家は非常に独特なスタイルを持っている。" } },
+            { word: "目に見える", choices: ["visible", "invisible", "vision", "visit"], answer: "visible", example: { en: "The stars were clearly visible in the night sky.", ja: "夜空には星がはっきりと見えた。" } },
+            { word: "一方では", choices: ["whereas", "however", "whenever", "whatever"], answer: "whereas", example: { en: "He likes coffee, whereas she prefers tea.", ja: "彼はコーヒーが好きだが、一方彼女は紅茶を好む。" } },
+            { word: "推薦する", choices: ["recommend", "command", "record", "recollect"], answer: "recommend", example: { en: "I would recommend this restaurant to anyone.", ja: "誰にでもこのレストランをお勧めします。" } },
+            { word: "提供する", choices: ["provide", "divide", "private", "prove"], answer: "provide", example: { en: "The hotel will provide breakfast for all guests.", ja: "そのホテルは全ての客に朝食を提供します。" } },
+            { word: "地域社会", choices: ["community", "company", "communication", "committee"], answer: "community", example: { en: "He is a respected member of the local community.", ja: "彼は地域社会で尊敬されている一員だ。" } },
+            { word: "環境", choices: ["environment", "envelopment", "invitement", "entertainment"], answer: "environment", example: { en: "We must protect the natural environment.", ja: "我々は自然環境を守らなければならない。" } },
+            { word: "乗り物", choices: ["vehicle", "vessel", "vision", "veil"], answer: "vehicle", example: { en: "Please check your vehicle before a long drive.", ja: "長距離ドライブの前に乗り物を確認してください。" } },
+            { word: "証拠", choices: ["evidence", "evident", "evil", "eventually"], answer: "evidence", example: { en: "The police found new evidence in the case.", ja: "警察はその事件で新しい証拠を見つけた。" } },
+            { word: "考慮する", choices: ["consider", "consist", "conclude", "consume"], answer: "consider", example: { en: "We need to consider all the options.", ja: "我々は全ての選択肢を考慮する必要がある。" } },
+            { word: "含む", choices: ["include", "invade", "insist", "income"], answer: "include", example: { en: "The price includes tax and service charge.", ja: "その価格には税金とサービス料が含まれています。" } },
+            { word: "達成する", choices: ["achieve", "archive", "active", "arrive"], answer: "achieve", example: { en: "She worked hard to achieve her goals.", ja: "彼女は目標を達成するために一生懸命働いた。" } },
+            { word: "絶対に", choices: ["absolutely", "abstractly", "accurately", "actually"], answer: "absolutely", example: { en: "Are you absolutely sure about this?", ja: "これについて絶対に確かですか？" } }
+        ];
+
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_AUTH_DOMAIN",
@@ -174,8 +205,7 @@
                     userId = userCredential.user.uid;
                 }
                 
-                if (userId && typeof window.wordList !== 'undefined') {
-                    appInitialized = true;
+                if (userId && typeof wordList !== 'undefined') {
                     initializeAppLogic();
                 } else {
                     throw new Error("User authentication or word list failed to load.");
@@ -192,13 +222,6 @@
         function initializeAppLogic() {
             document.getElementById('loader').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
-
-            if (typeof window.wordList === 'undefined' || window.wordList.length === 0) {
-                 console.error("wordList is not defined or empty.");
-                 document.body.innerHTML = '<div class="text-center p-8 text-red-500">単語リストの読み込みに失敗しました。words.jsファイルを確認してください。</div>';
-                 return;
-            }
-            const { wordList } = window;
             
             const QUESTIONS_PER_QUIZ = 20;
             const MISSED_THRESHOLD = 3; 
@@ -594,7 +617,7 @@
 
                 if (percentage >= 80) message = "素晴らしいです！よくできました！🥳";
                 else if (percentage >= 60) message = "よく頑張りました！もう少し！👍";
-                else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！ ";
+                else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
                 else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
 
                 if (cumulativeTarget > 0) {
@@ -641,4 +664,3 @@
     </script>
 </body>
 </html>
- 
