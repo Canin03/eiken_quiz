@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級英単語クイズ（起動エラー最終修正版）</title>
+    <title>英検2級英単語クイズ（安定版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英単語クイズ">
@@ -48,10 +48,7 @@
     </style>
 </head>
 <body class="bg-gray-100 px-4 py-8">
-    <div id="loader" class="text-center p-8">
-        <p class="text-lg text-gray-600 japanese-text">アプリを読み込み中...</p>
-    </div>
-    <div id="app-container" class="quiz-container w-full max-w-5xl mx-auto" style="display: none;">
+    <div id="app-container" class="quiz-container w-full max-w-5xl mx-auto">
         <header class="mb-4 text-center">
             <div class="flex justify-center items-center gap-x-3 mb-4">
                 <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -132,12 +129,7 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // --- 単語リストを直接ここに定義 ---
+    <script>
         const wordList = [
             { word: "獲得する", choices: ["acquire", "require", "inquire", "admire"], answer: "acquire", example: { en: "She managed to acquire a rare copy of the book.", ja: "彼女はその本の珍しい版を手に入れることができた。" } },
             { word: "利益", choices: ["benefit", "profit", "benign", "belief"], answer: "benefit", example: { en: "The new system will be of great benefit to the company.", ja: "新しいシステムは会社に大きな利益をもたらすだろう。" } },
@@ -171,58 +163,11 @@
             { word: "絶対に", choices: ["absolutely", "abstractly", "accurately", "actually"], answer: "absolutely", example: { en: "Are you absolutely sure about this?", ja: "これについて絶対に確かですか？" } }
         ];
 
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        
-        let db, auth;
-        let userId = null;
-        let appInitialized = false;
-
-        async function main() {
-            try {
-                const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-                const app = initializeApp(fbConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                const user = await new Promise((resolve, reject) => {
-                    const unsubscribe = onAuthStateChanged(auth, (user) => {
-                        unsubscribe();
-                        resolve(user);
-                    }, reject);
-                });
-
-                if (user) {
-                    userId = user.uid;
-                } else {
-                    const userCredential = await signInAnonymously(auth);
-                    userId = userCredential.user.uid;
-                }
-                
-                if (userId && typeof wordList !== 'undefined') {
-                    initializeAppLogic();
-                } else {
-                    throw new Error("User authentication or word list failed to load.");
-                }
-
-            } catch (error) {
-                console.error("Initialization failed:", error);
-                document.getElementById('loader').textContent = 'アプリの起動に失敗しました。ページを再読み込みしてください。';
-            }
-        }
-        
-        window.addEventListener('load', main);
-
-        function initializeAppLogic() {
+        document.addEventListener('DOMContentLoaded', () => {
+            
             document.getElementById('loader').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
-            
+
             const QUESTIONS_PER_QUIZ = 20;
             const MISSED_THRESHOLD = 3; 
             const TYPING_CHANCE = 0.2;
@@ -302,84 +247,28 @@
                 }
             }
 
-            const DAILY_PROGRESS_KEY = 'dailyHighestScores';
-            const WORD_STATS_COLLECTION = 'wordStats';
-            const SESSION_LOGS_COLLECTION = 'quizSessions';
-            
-            async function getUserData() {
-                if (!userId) return { cumulativeScore: 0, target: 0 };
-                const docRef = doc(db, "users", userId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    return {
-                        cumulativeScore: docSnap.data().cumulativeScore || 0,
-                        target: docSnap.data().target || 0
-                    };
-                }
-                return { cumulativeScore: 0, target: 0 };
-            }
-            
-            async function getWordStats() {
-                if (!userId) return {};
-                const statsColRef = collection(db, "users", userId, WORD_STATS_COLLECTION);
-                const querySnapshot = await getDocs(statsColRef);
-                const stats = {};
-                querySnapshot.forEach(doc => {
-                    stats[doc.id] = doc.data().missCount || 0;
-                });
-                return stats;
-            }
-            
-            async function updateWordStat(word, isCorrect) {
-                if (!userId) return;
-                const wordDocRef = doc(db, "users", userId, WORD_STATS_COLLECTION, word);
-                if (isCorrect) {
-                    try {
-                        await setDoc(wordDocRef, { missCount: 0 }, { merge: true });
-                    } catch(e) { console.error("Error resetting miss count:", e); }
-                } else {
-                    try {
-                        await setDoc(wordDocRef, { missCount: increment(1) }, { merge: true });
-                    } catch(e) { console.error("Error updating miss count:", e); }
-                }
+            // LocalStorage Keys
+            const DAILY_SESSIONS_KEY = 'eikenQuizDailySessions';
+            const WORD_STATS_KEY = 'eikenQuizWordStats';
+            const CUMULATIVE_TARGET_KEY = 'eikenQuizCumulativeTarget';
+            const CUMULATIVE_SCORE_KEY = 'eikenQuizCumulativeScore';
+
+            function getFromStorage(key, defaultValue) {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
             }
 
-            async function getDailyProgress() {
-                if (!userId) return [];
-                const progressColRef = collection(db, "users", userId, DAILY_PROGRESS_KEY);
-                const querySnapshot = await getDocs(progressColRef);
-                let progress = [];
-                querySnapshot.forEach((doc) => {
-                    progress.push({ date: doc.id, ...doc.data() });
-                });
-                return progress;
+            function saveToStorage(key, value) {
+                localStorage.setItem(key, JSON.stringify(value));
             }
 
-            async function getSessionLogs() {
-                 if (!userId) return [];
-                const sessionColRef = collection(db, "users", userId, SESSION_LOGS_COLLECTION);
-                const querySnapshot = await getDocs(sessionColRef);
-                let sessions = [];
-                querySnapshot.forEach((doc) => {
-                    sessions.push(doc.data());
-                });
-                return sessions;
+            function loadAllData() {
+                missedWordsStats = getFromStorage(WORD_STATS_KEY, {});
+                loadTargetScore();
             }
             
-            async function saveSessionLog(currentScore) {
-                if (!userId) return;
-                const timestamp = new Date().toISOString();
-                const sessionDocRef = doc(db, "users", userId, SESSION_LOGS_COLLECTION, timestamp);
-                try {
-                    await setDoc(sessionDocRef, { score: currentScore, date: timestamp.split('T')[0] });
-                } catch(e) {
-                    console.error("Error saving session log:", e);
-                }
-            }
-            
-            async function loadTargetScore() {
-                const data = await getUserData();
-                const savedTarget = data.target;
+            function loadTargetScore() {
+                const savedTarget = getFromStorage(CUMULATIVE_TARGET_KEY, 0);
                 if (savedTarget > 0) {
                     targetScoreInput.value = savedTarget;
                     currentTargetDisplay.textContent = `累計目標: ${savedTarget}点`;
@@ -389,40 +278,33 @@
                 }
             }
 
-            async function saveTargetScore() {
-                if (!userId) return alert("ユーザー情報が取得できませんでした。");
+            function saveTargetScore() {
                 const targetValue = parseInt(targetScoreInput.value);
                 if (!isNaN(targetValue) && targetValue >= 0) {
-                    const docRef = doc(db, "users", userId);
-                    try {
-                        await setDoc(docRef, { target: targetValue }, { merge: true });
-                        currentTargetDisplay.textContent = `累計目標: ${targetValue}点`;
-                        alert('累計目標スコアを保存しました！');
-                    } catch (e) {
-                         console.error("Error saving target score:", e);
-                         alert("目標の保存に失敗しました。");
-                    }
+                    saveToStorage(CUMULATIVE_TARGET_KEY, targetValue);
+                    currentTargetDisplay.textContent = `累計目標: ${targetValue}点`;
+                    alert('累計目標スコアを保存しました！');
                 } else {
                     alert(`有効な目標スコア（0以上の数字）を入力してください。`);
                 }
             }
 
-            async function renderProgressChart() {
-                const progressData = await getDailyProgress();
+            function renderProgressChart() {
+                const sessionData = getFromStorage(DAILY_SESSIONS_KEY, {});
                 if (progressChartInstance) progressChartInstance.destroy();
                 if (!progressChartCanvas) return;
                 const ctx = progressChartCanvas.getContext('2d');
                 
-                progressData.sort((a, b) => new Date(a.date) - new Date(b.date));
-                const recentProgress = progressData.slice(-MAX_PROGRESS_DAYS);
-                
-                const labels = recentProgress.map(entry => {
-                    const dateObj = new Date(entry.date);
+                const sortedDates = Object.keys(sessionData).sort((a,b) => new Date(a) - new Date(b));
+                const recentDates = sortedDates.slice(-10);
+
+                const labels = recentDates.map(date => {
+                    const dateObj = new Date(date);
                     return `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
                 });
-                const dailyScores = recentProgress.map(entry => entry.score);
+                const dailyScores = recentDates.map(date => sessionData[date].highestScore);
 
-                if (progressData.length === 0) {
+                if (recentDates.length === 0) {
                      ctx.clearRect(0, 0, progressChartCanvas.width, progressChartCanvas.height);
                      ctx.font = "16px 'Noto Sans JP', sans-serif";
                      ctx.fillStyle = "#6b7280";
@@ -433,18 +315,14 @@
                 
                 progressChartInstance = new Chart(ctx, {
                     type: 'bar',
-                    data: { 
-                        labels: labels, 
-                        datasets: [{
-                            label: '日別最高スコア',
-                            data: dailyScores,
-                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
-                            borderColor: 'rgba(79, 70, 229, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4,
-                            hoverBackgroundColor: 'rgba(99, 102, 241, 0.8)'
-                        }] 
-                    },
+                    data: { labels: labels, datasets: [{
+                        label: '日別最高スコア',
+                        data: dailyScores,
+                        backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1, borderRadius: 4,
+                        hoverBackgroundColor: 'rgba(99, 102, 241, 0.8)'
+                    }]},
                     options: {
                         responsive: true, maintainAspectRatio: true,
                         scales: { y: { beginAtZero: true, max: QUESTIONS_PER_QUIZ + 2 }, x: { ticks: { font: { family: "'Inter', 'Noto Sans JP', sans-serif" } } } },
@@ -453,23 +331,19 @@
                 });
             }
 
-            async function startQuiz() {
-                missedWordsStats = await getWordStats();
-
+            function startQuiz() {
+                loadAllData();
                 let allWordsShuffled = shuffleArray([...wordList]);
                 shuffledWords = allWordsShuffled.slice(0, QUESTIONS_PER_QUIZ);
 
                 currentQuestionIndex = 0;
                 score = 0;
-                currentCorrectAnswer = "";
-                currentExample = null;
                 scoreDisplay.textContent = `スコア: ${score}`;
                 quizArea.style.display = 'block';
                 resultArea.style.display = 'none';
                 if(graphDisplayArea) graphDisplayArea.style.display = 'none';
                 toggleGraphButton.textContent = '進捗グラフを見る';
-                await loadTargetScore();
-
+                
                 nextButton.style.display = 'none';
                 if(quitQuizButton) quitQuizButton.style.display = 'inline-block';
                 if(speakButton) speakButton.style.display = 'none';
@@ -528,10 +402,16 @@
                 }
             }
             
-            async function handleAnswer(isCorrect, correctAnswer) {
+            function handleAnswer(isCorrect, correctAnswer) {
                 const wasMissedWord = missedWordsStats[correctAnswer] && missedWordsStats[correctAnswer] >= MISSED_THRESHOLD;
-                await updateWordStat(correctAnswer, isCorrect);
-
+                
+                if (isCorrect) {
+                    if (wasMissedWord) missedWordsStats[correctAnswer] = 0;
+                } else {
+                    missedWordsStats[correctAnswer] = (missedWordsStats[correctAnswer] || 0) + 1;
+                }
+                saveToStorage(WORD_STATS_KEY, missedWordsStats);
+                
                 speakWord(correctAnswer); 
                 if(speakButton) speakButton.style.display = 'inline-block'; 
 
@@ -585,28 +465,28 @@
                 handleAnswer(isCorrect, currentCorrectAnswer);
             }
 
-            async function showResults() {
+            function showResults() {
                 quizArea.style.display = 'none';
                 resultArea.style.display = 'block';
                 
-                await saveDailyHighestScore(score); 
-                await saveSessionLog(score);
-                
-                const userDocRef = doc(db, "users", userId);
-                await setDoc(userDocRef, { cumulativeScore: increment(score) }, { merge: true });
-                
-                const updatedData = await getUserData();
-                const cumulativeScore = updatedData.cumulativeScore;
-                const cumulativeTarget = updatedData.target;
-                
-                const sessionLogs = await getSessionLogs();
+                let cumulativeScore = getFromStorage(CUMULATIVE_SCORE_KEY, 0) + score;
+                saveToStorage(CUMULATIVE_SCORE_KEY, cumulativeScore);
+
+                const today = new Date().toISOString().split('T')[0];
+                let sessionData = getFromStorage(DAILY_SESSIONS_KEY, {});
+                if (!sessionData[today] || score > sessionData[today].highestScore) {
+                    sessionData[today] = { ...sessionData[today], highestScore: score };
+                }
+                sessionData[today].totalScore = (sessionData[today].totalScore || 0) + score;
+                saveToStorage(DAILY_SESSIONS_KEY, sessionData);
+
                 let monthlyScore = 0;
-                const currentMonth = new Date().toISOString().slice(0, 7); // "YYYY-MM"
-                sessionLogs.forEach(log => {
-                    if (log.date.startsWith(currentMonth)) {
-                        monthlyScore += log.score;
+                const currentMonth = today.slice(0, 7);
+                for (const date in sessionData) {
+                    if (date.startsWith(currentMonth)) {
+                        monthlyScore += sessionData[date].totalScore;
                     }
-                });
+                }
 
                 finalScoreDisplay.textContent = `今回のスコア: ${score} / ${shuffledWords.length}`;
                 cumulativeScoreDisplay.textContent = `総合累計スコア: ${cumulativeScore}点`;
@@ -620,6 +500,7 @@
                 else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
                 else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
 
+                const cumulativeTarget = getFromStorage(CUMULATIVE_TARGET_KEY, 0);
                 if (cumulativeTarget > 0) {
                     if (cumulativeScore >= cumulativeTarget) {
                         message += `\n\n累計目標 (${cumulativeTarget}点) 達成です！おめでとうございます！🎯`;
