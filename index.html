@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級英単語クイズ（苦手克服ボーナス機能付き）</title>
+    <title>英検2級英単語クイズ（苦手単語ハイライト機能付き）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定を追加 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英単語クイズ">
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- words.jsを先に読み込む -->
-    <script src="words.js"></script>
+    <script src="words.js" defer></script>
     <style>
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
         .quiz-container { margin: 2rem auto; padding: 2rem; background-color: #f9fafb; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
@@ -80,7 +80,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-6">
             
             <div class="lg:col-span-3 space-y-6">
-                <div id="quizArea">
+                <div id="quizArea" style="display: none;">
                     <div id="progressArea" class="flex justify-between items-center mb-4">
                         <p id="questionNumber" class="text-xl font-semibold text-indigo-600 japanese-text"></p>
                         <p id="score" class="text-xl font-semibold text-green-600 japanese-text">スコア: 0</p>
@@ -148,50 +148,46 @@
         
         let db, auth;
         let userId = null;
-        let isAuthReady = false;
+        let appInitialized = false;
 
-        try {
-            const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
-            const app = initializeApp(fbConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
+        function main() {
+            try {
+                const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+                const app = initializeApp(fbConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
 
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    userId = user.uid;
-                } else {
-                    try {
-                        const userCredential = await signInAnonymously(auth);
-                        userId = userCredential.user.uid;
-                    } catch (error) {
-                        console.error("Error signing in anonymously:", error);
-                        alert("認証に失敗しました。アプリをリロードしてください。");
+                onAuthStateChanged(auth, async (user) => {
+                    if (appInitialized) return; // Prevent re-initialization
+
+                    if (user) {
+                        userId = user.uid;
+                        appInitialized = true;
+                        initializeAppLogic();
+                    } else {
+                        signInAnonymously(auth).catch((error) => {
+                            console.error("Anonymous sign-in failed:", error);
+                            document.body.innerHTML = '<div class="text-center p-8 text-red-500">認証に失敗しました。ページをリロードしてください。</div>';
+                        });
                     }
-                }
-                isAuthReady = true;
-            });
+                });
 
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            document.body.innerHTML = '<div class="text-center p-8 text-red-500">Firebaseの初期化に失敗しました。設定を確認してください。</div>';
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                document.body.innerHTML = '<div class="text-center p-8 text-red-500">Firebaseの初期化に失敗しました。設定を確認してください。</div>';
+            }
         }
         
-        document.addEventListener('DOMContentLoaded', () => {
-            const checkReady = setInterval(() => {
-                if (isAuthReady && typeof window.wordList !== 'undefined') {
-                    clearInterval(checkReady);
-                    initializeAppLogic();
-                }
-            }, 100);
-        });
+        // Ensure words.js is loaded before trying to initialize the app
+        document.addEventListener('DOMContentLoaded', main);
 
         function initializeAppLogic() {
-            const { wordList } = window;
-            if (!wordList || wordList.length === 0) {
+            if (typeof window.wordList === 'undefined' || window.wordList.length === 0) {
                  console.error("wordList is not defined or empty.");
                  document.body.innerHTML = '<div class="text-center p-8 text-red-500">単語リストの読み込みに失敗しました。words.jsファイルを確認してください。</div>';
                  return;
             }
+            const { wordList } = window;
             
             const QUESTIONS_PER_QUIZ = 20;
             const MISSED_THRESHOLD = 3; 
