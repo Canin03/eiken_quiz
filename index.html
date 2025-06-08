@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級英単語クイズ（苦手単語ハイライト機能付き）</title>
+    <title>英検2級英単語クイズ（起動エラー修正版）</title>
     
-    <!-- ▼▼▼ ホーム画面アイコン用の設定を追加 ▼▼▼ -->
+    <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英単語クイズ">
-    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text= ">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text=🦉">
     <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/c7d2fe/3730a3?text=🦉">
     <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/c7d2fe/3730a3?text=🦉">
-    <!-- ▲▲▲ ホーム画面アイコン用の設定を追加 ▲▲▲ -->
+    <!-- ▲▲▲ ホーム画面アイコン用の設定 ▲▲▲ -->
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- words.jsを先に読み込む -->
-    <script src="words.js" defer></script>
+    <script src="words.js"></script>
     <style>
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
         .quiz-container { margin: 2rem auto; padding: 2rem; background-color: #f9fafb; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
@@ -50,7 +50,10 @@
     </style>
 </head>
 <body class="bg-gray-100 px-4 py-8">
-    <div class="quiz-container w-full max-w-5xl mx-auto">
+    <div id="loader" class="text-center p-8">
+        <p class="text-lg text-gray-600 japanese-text">アプリを読み込み中...</p>
+    </div>
+    <div id="app-container" class="quiz-container w-full max-w-5xl mx-auto" style="display: none;">
         <header class="mb-4 text-center">
             <div class="flex justify-center items-center gap-x-3 mb-4">
                 <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -158,30 +161,41 @@
                 auth = getAuth(app);
 
                 onAuthStateChanged(auth, async (user) => {
-                    if (appInitialized) return; // Prevent re-initialization
+                    if (appInitialized) return;
 
                     if (user) {
                         userId = user.uid;
+                    } else {
+                        try {
+                           const userCredential = await signInAnonymously(auth);
+                           userId = userCredential.user.uid;
+                        } catch (error) {
+                            console.error("Anonymous sign-in failed:", error);
+                            document.getElementById('loader').textContent = '認証に失敗しました。ページを再読み込みしてください。';
+                            return;
+                        }
+                    }
+                    
+                    if (userId && typeof window.wordList !== 'undefined') {
                         appInitialized = true;
                         initializeAppLogic();
-                    } else {
-                        signInAnonymously(auth).catch((error) => {
-                            console.error("Anonymous sign-in failed:", error);
-                            document.body.innerHTML = '<div class="text-center p-8 text-red-500">認証に失敗しました。ページをリロードしてください。</div>';
-                        });
                     }
                 });
 
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
-                document.body.innerHTML = '<div class="text-center p-8 text-red-500">Firebaseの初期化に失敗しました。設定を確認してください。</div>';
+                document.getElementById('loader').textContent = 'Firebaseの初期化に失敗しました。設定を確認してください。';
             }
         }
         
-        // Ensure words.js is loaded before trying to initialize the app
+        // DOMの読み込みが完了してからFirebaseの初期化を開始
         document.addEventListener('DOMContentLoaded', main);
 
         function initializeAppLogic() {
+            // ローダーを非表示にし、アプリコンテナを表示
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+
             if (typeof window.wordList === 'undefined' || window.wordList.length === 0) {
                  console.error("wordList is not defined or empty.");
                  document.body.innerHTML = '<div class="text-center p-8 text-red-500">単語リストの読み込みに失敗しました。words.jsファイルを確認してください。</div>';
@@ -626,4 +640,3 @@
     </script>
 </body>
 </html>
- 
