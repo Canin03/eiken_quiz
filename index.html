@@ -7,7 +7,7 @@
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英単語クイズ">
-    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text= ">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text=🦉">
     <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/c7d2fe/3730a3?text=🦉">
     <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/c7d2fe/3730a3?text=🦉">
     <!-- ▲▲▲ ホーム画面アイコン用の設定 ▲▲▲ -->
@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- words.jsを先に読み込む -->
-    <script src="words.js"></script>
+    <script src="words.js" defer></script>
     <style>
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
         .quiz-container { margin: 2rem auto; padding: 2rem; background-color: #f9fafb; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
@@ -48,94 +48,8 @@
         @media (min-width: 640px) { .action-buttons-container { flex-direction: row; justify-content: center; } .action-buttons-container button { width: auto; } }
         .missed-word { color: #ef4444; /* red-500 */ }
     </style>
-</head>
-<body class="bg-gray-100 px-4 py-8">
-    <div id="loader" class="text-center p-8">
-        <p class="text-lg text-gray-600 japanese-text">アプリを読み込み中...</p>
-    </div>
-    <div id="app-container" class="quiz-container w-full max-w-5xl mx-auto" style="display: none;">
-        <header class="mb-4 text-center">
-            <div class="flex justify-center items-center gap-x-3 mb-4">
-                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                    <div class="text-3xl">🦉</div>
-                </div>
-                <h1 class="text-3xl font-bold text-gray-800 japanese-text">英検2級英単語クイズ</h1>
-            </div>
-            
-            <div id="targetScoreSettingArea">
-                <label for="targetScoreInput" class="japanese-text font-medium text-gray-700">累計目標スコア:</label>
-                <input type="number" id="targetScoreInput" min="0">
-                <button id="saveTargetButton" class="font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">目標を設定</button>
-                <p id="currentTargetDisplay" class="japanese-text"></p>
-            </div>
-
-            <button id="toggleGraphButton" class="mt-4 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
-                進捗グラフを見る
-            </button>
-        </header>
-
-        <div id="graphDisplayArea" style="display: none;">
-            <h2 class="text-xl font-semibold text-gray-700 mb-3 japanese-text text-center">学習進捗グラフ</h2>
-            <canvas id="progressChart"></canvas>
-            <p class="text-xs text-gray-500 mt-2 text-center japanese-text">過去最大10日間の日別最高スコアが表示されます。</p>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-6">
-            
-            <div class="lg:col-span-3 space-y-6">
-                <div id="quizArea" style="display: none;">
-                    <div id="progressArea" class="flex justify-between items-center mb-4">
-                        <p id="questionNumber" class="text-xl font-semibold text-indigo-600 japanese-text"></p>
-                        <p id="score" class="text-xl font-semibold text-green-600 japanese-text">スコア: 0</p>
-                    </div>
-
-                    <div id="wordDisplay" class="text-center p-6 bg-white rounded-lg shadow">
-                        <p id="word" class="text-4xl font-bold text-gray-700 japanese-text"></p>
-                        <p id="instructionText" class="text-sm text-gray-500 mt-2 japanese-text"></p>
-                        <button id="speakButton">🔊 発音を聞く</button>
-                    </div>
-
-                    <div id="interactionArea" class="mt-6">
-                        <div id="options" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-                        <div id="typingArea" class="space-y-3" style="display: none;">
-                             <input type="text" id="typingInput" placeholder="英語のスペルを入力" lang="en" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg" autocapitalize="off" autocorrect="off" spellcheck="false">
-                             <button id="submitTypingAnswerButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">解答する</button>
-                        </div>
-                    </div>
-
-                    <div id="feedback" class="feedback-message text-center text-2xl font-semibold mt-4 japanese-text">
-                    </div>
-                    
-                    <div class="action-buttons-container">
-                        <button id="quitQuizButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text" style="display: none;">クイズを終了する</button>
-                        <button id="nextButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text" style="display: none;">次の問題へ</button>
-                    </div>
-                </div>
-
-                <div id="resultArea" class="text-center py-8" style="display: none;">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 japanese-text">クイズ終了！</h2>
-                    <p id="finalScore" class="text-3xl font-semibold text-indigo-600 mb-2"></p>
-                    <div class="space-y-2 mb-4">
-                        <p id="cumulativeScoreDisplay" class="score-display"></p>
-                        <p id="monthlyTotalScoreDisplay" class="score-display"></p>
-                    </div>
-                    <p id="resultMessage" class="text-lg text-gray-700 mb-6 japanese-text"></p>
-                    <button id="restartButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">もう一度挑戦する</button>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2">
-                <div id="exampleSentenceArea">
-                    <p class="font-semibold japanese-text">例文:</p>
-                    <p id="exampleEn" class="example-en"></p>
-                    <p id="exampleJa" class="example-ja japanese-text"></p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Firebase SDKs -->
-    <script type="module">
+    <script type="module" defer>
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -151,21 +65,13 @@
         
         let db, auth;
         let userId = null;
-        let isDomReady = false;
-        let isAuthReady = false;
         let appInitialized = false;
 
-        function tryStartApp() {
-            if (isDomReady && isAuthReady && !appInitialized) {
-                appInitialized = true;
-                initializeAppLogic();
-            }
+        function main() {
+            if (appInitialized) return;
+            appInitialized = true;
+            initializeAppLogic();
         }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            isDomReady = true;
-            tryStartApp();
-        });
 
         try {
             const fbConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
@@ -173,38 +79,32 @@
             db = getFirestore(app);
             auth = getAuth(app);
 
-            onAuthStateChanged(auth, async (user) => {
+            onAuthStateChanged(auth, (user) => {
                 if (user) {
                     userId = user.uid;
+                    main();
                 } else {
-                    try {
-                        const userCredential = await signInAnonymously(auth);
-                        userId = userCredential.user.uid;
-                    } catch (error) {
+                    signInAnonymously(auth).catch((error) => {
                         console.error("Anonymous sign-in failed:", error);
-                        if(document.getElementById('loader')) document.getElementById('loader').textContent = '認証に失敗しました。ページを再読み込みしてください。';
-                        return;
-                    }
+                        document.getElementById('loader').textContent = '認証に失敗しました。ページを再読み込みしてください。';
+                    });
                 }
-                isAuthReady = true;
-                tryStartApp();
             });
 
         } catch (error) {
             console.error("Firebase initialization failed:", error);
-            if(document.getElementById('loader')) document.getElementById('loader').textContent = 'Firebaseの初期化に失敗しました。設定を確認してください。';
+            document.getElementById('loader').textContent = 'Firebaseの初期化に失敗しました。設定を確認してください。';
         }
 
         function initializeAppLogic() {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('app-container').style.display = 'block';
+
             if (typeof window.wordList === 'undefined' || window.wordList.length === 0) {
                  console.error("wordList is not defined or empty.");
                  document.body.innerHTML = '<div class="text-center p-8 text-red-500">単語リストの読み込みに失敗しました。words.jsファイルを確認してください。</div>';
                  return;
             }
-            
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('app-container').style.display = 'block';
-
             const { wordList } = window;
             
             const QUESTIONS_PER_QUIZ = 20;
@@ -596,7 +496,7 @@
                 const percentage = (score / shuffledWords.length) * 100;
 
                 if (percentage >= 80) message = "素晴らしいです！よくできました！🥳";
-                else if (percentage >= 60) message = "よく頑張りました！もう少し！👍";
+                else if (percentage >= 60) message = "よく頑張りました！もう少し！ ";
                 else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
                 else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
 
