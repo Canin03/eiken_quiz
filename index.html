@@ -188,11 +188,9 @@
             }
         }
         
-        // DOMの読み込みが完了してからFirebaseの初期化を開始
         document.addEventListener('DOMContentLoaded', main);
 
         function initializeAppLogic() {
-            // ローダーを非表示にし、アプリコンテナを表示
             document.getElementById('loader').style.display = 'none';
             document.getElementById('app-container').style.display = 'block';
 
