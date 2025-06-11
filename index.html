@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級 英単語クイズ（機能改善版）</title>
+    <title>英検2級 英単語クイズ（グラフ表示修正版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英検2級クイズ">
@@ -88,17 +88,14 @@
         </div>
 
         <div id="app-container" style="display: none;">
-            <header class="mb-4 text-center">
+            <header class="mb-4 flex justify-between items-center">
                 <button id="backToMenuButton" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
                     メインメニューに戻る
                 </button>
+                <button id="appToggleGraphButton" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
+                    進捗グラフ
+                </button>
             </header>
-
-            <div id="graphDisplayArea" style="display: none;">
-                <h2 class="text-xl font-semibold text-gray-700 mb-3 japanese-text text-center">学習進捗グラフ</h2>
-                <canvas id="progressChart"></canvas>
-                <p class="text-xs text-gray-500 mt-2 text-center japanese-text">過去最大10日間の日別最高スコアが表示されます。</p>
-            </div>
 
             <div id="quizAndResultContainer" class="mt-6">
                 <div id="quizArea" style="display: none;">
@@ -147,6 +144,17 @@
                     <p id="resultMessage" class="text-lg text-gray-700 mb-6 japanese-text"></p>
                     <button id="restartButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">もう一度挑戦する</button>
                 </div>
+            </div>
+        </div>
+        
+        <div id="graphDisplayArea" style="display: none;" class="mt-6">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3 japanese-text text-center">学習進捗グラフ</h2>
+            <canvas id="progressChart"></canvas>
+            <p class="text-xs text-gray-500 mt-2 text-center japanese-text">過去最大10日間の日別最高スコアが表示されます。</p>
+            <div class="text-center mt-4">
+                 <button id="closeGraphButton" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
+                    閉じる
+                </button>
             </div>
         </div>
     </div>
@@ -211,11 +219,13 @@
             const exampleSentenceArea = document.getElementById('exampleSentenceArea');
             const exampleEnDisplay = document.getElementById('exampleEn');
             const exampleJaDisplay = document.getElementById('exampleJa');
-            const toggleGraphButton = document.getElementById('mainMenuToggleGraphButton');
+            const mainMenuToggleGraphButton = document.getElementById('mainMenuToggleGraphButton');
+            const appToggleGraphButton = document.getElementById('appToggleGraphButton');
             const graphDisplayArea = document.getElementById('graphDisplayArea');
             const progressChartCanvas = document.getElementById('progressChart');
             const quitQuizButton = document.getElementById('quitQuizButton');
             const backToMenuButton = document.getElementById('backToMenuButton');
+            const closeGraphButton = document.getElementById('closeGraphButton');
             
             const targetScoreSelect = document.getElementById('targetScoreSelect');
             const saveTargetButton = document.getElementById('saveTargetButton');
@@ -417,7 +427,6 @@
                 quizArea.style.display = 'block';
                 resultArea.style.display = 'none';
                 if(graphDisplayArea) graphDisplayArea.style.display = 'none';
-                toggleGraphButton.textContent = '進捗グラフを見る';
                 
                 nextButton.style.display = 'none';
                 if(quitQuizButton) quitQuizButton.style.display = 'inline-block';
@@ -579,7 +588,7 @@
                 const cumulativeTarget = getFromStorage(CUMULATIVE_TARGET_KEY, 0);
                 if (cumulativeTarget > 0) {
                     if (cumulativeScore >= cumulativeTarget) {
-                        message += `\n\n累計目標 (${cumulativeTarget}点) 達成です！おめでとうございます！🎯`;
+                        message += `\n\n累計目標 (${cumulativeTarget}点) 達成です！おめでとうございます！ `;
                         yakinikuMessage.textContent = '総合計得点勝者の君には豪華焼肉!!';
                         yakinikuMessage.style.display = 'block';
                     } else {
@@ -594,7 +603,6 @@
                 if(speakButton) speakButton.style.display = 'none';
                 if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
                 if(graphDisplayArea) graphDisplayArea.style.display = 'none';
-                toggleGraphButton.textContent = '進捗グラフを見る';
                 if(quitQuizButton) quitQuizButton.style.display = 'none';
             }
 
@@ -605,12 +613,20 @@
 
             restartButton.addEventListener('click', showMainMenu);
 
-            if(speakButton) speakButton.addEventListener('click', () => speakWord(currentCorrectAnswer));
-            if(toggleGraphButton) toggleGraphButton.addEventListener('click', () => {
-                const isHidden = graphDisplayArea.style.display === 'none';
+            function toggleGraph() {
+                 const isHidden = graphDisplayArea.style.display === 'none';
                 graphDisplayArea.style.display = isHidden ? 'block' : 'none';
-                toggleGraphButton.textContent = isHidden ? 'グラフを隠す' : '進捗グラフを見る';
+                mainMenu.style.display = isHidden ? 'none' : 'block';
+                appContainer.style.display = 'none';
                 if (isHidden) renderProgressChart();
+            }
+
+            if(speakButton) speakButton.addEventListener('click', () => speakWord(currentCorrectAnswer));
+            if(mainMenuToggleGraphButton) mainMenuToggleGraphButton.addEventListener('click', toggleGraph);
+            if(appToggleGraphButton) appToggleGraphButton.addEventListener('click', toggleGraph);
+            if(closeGraphButton) closeGraphButton.addEventListener('click', () => {
+                graphDisplayArea.style.display = 'none';
+                showMainMenu();
             });
             if(quitQuizButton) quitQuizButton.addEventListener('click', showResults);
             if(saveTargetButton) saveTargetButton.addEventListener('click', saveTargetScore);
@@ -626,3 +642,4 @@
     </script>
 </body>
 </html>
+ 
