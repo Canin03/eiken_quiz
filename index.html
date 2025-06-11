@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級 英単語クイズ（応援機能強化版）</title>
+    <title>英検3級 英単語クイズ（グラフ表示修正版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
-    <meta name="apple-mobile-web-app-title" content="英検2級クイズ">
-    <link rel="apple-touch-icon" href="https://placehold.co/180x180/c7d2fe/3730a3?text=🦉2">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/c7d2fe/3730a3?text=🦉2">
-    <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/c7d2fe/3730a3?text=🦉2">
+    <meta name="apple-mobile-web-app-title" content="英単語クイズ">
+    <link rel="apple-touch-icon" href="https://placehold.co/180x180/86efac/15803d?text=🦉3">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/86efac/15803d?text=🦉3">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/86efac/15803d?text=🦉3">
     <!-- ▲▲▲ ホーム画面アイコン用の設定 ▲▲▲ -->
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -52,10 +52,10 @@
         
         <div id="mainMenu" class="text-center">
             <div class="flex justify-center items-center gap-x-3 mb-4">
-                <div class="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                     <div class="text-3xl">🦉</div>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-800 japanese-text">英検2級 英単語クイズ</h1>
+                <h1 class="text-3xl font-bold text-gray-800 japanese-text">英検3級 英単語クイズ</h1>
             </div>
 
             <div id="targetScoreSettingArea" class="my-6">
@@ -77,16 +77,16 @@
             <p id="endOfMonthMessage" class="text-lg my-4 japanese-text" style="display: none;"></p>
             <p id="motivationalMessage" class="text-lg text-gray-600 my-8 px-4 japanese-text"></p>
             
-            <button id="startQuizButton" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300 ease-in-out japanese-text text-xl">
+            <button id="startQuizButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-8 rounded-full shadow-lg transform hover:scale-105 transition-transform duration-300 ease-in-out japanese-text text-xl">
                 クイズをはじめる
             </button>
-             <button id="toggleGraphButton" class="mt-8 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
+             <button id="mainMenuToggleGraphButton" class="mt-8 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
                 進捗グラフを見る
             </button>
         </div>
 
         <div id="app-container" style="display: none;">
-            <header class="mb-4 text-center">
+             <header class="mb-4 text-center">
                 <button id="backToMenuButton" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
                     メインメニューに戻る
                 </button>
@@ -153,502 +153,20 @@
         document.addEventListener('DOMContentLoaded', () => {
             
             const wordList = [
-                { word: "獲得する", choices: ["acquire", "require", "inquire", "admire"], answer: "acquire", example: { en: "She managed to acquire a rare copy of the book.", ja: "彼女はその本の珍しい版を手に入れることができた。" } },
-                { word: "利益", choices: ["benefit", "profit", "benign", "belief"], answer: "benefit", example: { en: "The new system will be of great benefit to the company.", ja: "新しいシステムは会社に大きな利益をもたらすだろう。" } },
-                { word: "気候", choices: ["climate", "weather", "climax", "climb"], answer: "climate", example: { en: "The climate in this region is very mild.", ja: "この地域の気候は非常に穏やかだ。" } },
-                { word: "定義する", choices: ["define", "devine", "defense", "definition"], answer: "define", example: { en: "It's difficult to define the concept of 'happiness'.", ja: "「幸福」という概念を定義するのは難しい。" } },
-                { word: "探検する", choices: ["explore", "export", "explode", "express"], answer: "explore", example: { en: "They decided to explore the uncharted island.", ja: "彼らは未知の島を探検することに決めた。" } },
-                { word: "特徴", choices: ["feature", "future", "feather", "fracture"], answer: "feature", example: { en: "One notable feature of this phone is its long battery life.", ja: "この電話の注目すべき特徴の一つはバッテリーの持ちが良いことです。" } },
-                { word: "地球規模の", choices: ["global", "local", "noble", "globe"], answer: "global", example: { en: "Global warming is a serious issue.", ja: "地球温暖化は深刻な問題だ。" } },
-                { word: "影響", choices: ["impact", "compact", "effect", "inspect"], answer: "impact", example: { en: "The new law will have a significant impact on the economy.", ja: "新しい法律は経済に大きな影響を与えるだろう。" } },
-                { word: "正当化する", choices: ["justify", "justice", "adjust", "testify"], answer: "justify", example: { en: "He tried to justify his actions, but no one believed him.", ja: "彼は自分の行動を正当化しようとしたが、誰も彼を信じなかった。" } },
-                { word: "開始する", choices: ["launch", "lunch", "lounge", "branch"], answer: "launch", example: { en: "The company plans to launch a new product next month.", ja: "その会社は来月新製品を発売する予定だ。" } },
-                { word: "維持する", choices: ["maintain", "contain", "remain", "mainland"], answer: "maintain", example: { en: "It's important to maintain a healthy lifestyle.", ja: "健康的な生活習慣を維持することは重要だ。" } },
-                { word: "交渉する", choices: ["negotiate", "navigate", "neglect", "initiate"], answer: "negotiate", example: { en: "They were able to negotiate a peaceful settlement.", ja: "彼らは平和的な解決策を交渉することができた。" } },
-                { word: "占める", choices: ["occupy", "occur", "copy", "octopy"], answer: "occupy", example: { en: "The new building will occupy a large area.", ja: "新しい建物は広い面積を占めることになるだろう。" } },
-                { word: "促進する", choices: ["promote", "promise", "remote", "motion"], answer: "promote", example: { en: "The campaign aims to promote environmental awareness.", ja: "そのキャンペーンは環境意識を高めることを目的としている。" } },
-                { word: "減らす", choices: ["reduce", "deduce", "reuse", "refuse"], answer: "reduce", example: { en: "We need to reduce our carbon footprint.", ja: "私たちは二酸化炭素排出量を減らす必要がある。" } },
-                { word: "重要な", choices: ["significant", "magnificent", "signature", "insignificant"], answer: "significant", example: { en: "This is a significant discovery in the field of medicine.", ja: "これは医学分野における重要な発見だ。" } },
-                { word: "移動させる", choices: ["transfer", "transmit", "transform", "transport"], answer: "transfer", example: { en: "He will transfer to a new department next week.", ja: "彼は来週新しい部署に異動する。" } },
-                { word: "独特の", choices: ["unique", "united", "antique", "unify"], answer: "unique", example: { en: "This artist has a very unique style.", ja: "この芸術家は非常に独特なスタイルを持っている。" } },
-                { word: "目に見える", choices: ["visible", "invisible", "vision", "visit"], answer: "visible", example: { en: "The stars were clearly visible in the night sky.", ja: "夜空には星がはっきりと見えた。" } },
-                { word: "一方では", choices: ["whereas", "however", "whenever", "whatever"], answer: "whereas", example: { en: "He likes coffee, whereas she prefers tea.", ja: "彼はコーヒーが好きだが、一方彼女は紅茶を好む。" } },
-                { word: "推薦する", choices: ["recommend", "command", "record", "recollect"], answer: "recommend", example: { en: "I would recommend this restaurant to anyone.", ja: "誰にでもこのレストランをお勧めします。" } },
-                { word: "提供する", choices: ["provide", "divide", "private", "prove"], answer: "provide", example: { en: "The hotel will provide breakfast for all guests.", ja: "そのホテルは全ての客に朝食を提供します。" } },
-                { word: "地域社会", choices: ["community", "company", "communication", "committee"], answer: "community", example: { en: "He is a respected member of the local community.", ja: "彼は地域社会で尊敬されている一員だ。" } },
-                { word: "環境", choices: ["environment", "envelopment", "invitement", "entertainment"], answer: "environment", example: { en: "We must protect the natural environment.", ja: "我々は自然環境を守らなければならない。" } },
-                { word: "乗り物", choices: ["vehicle", "vessel", "vision", "veil"], answer: "vehicle", example: { en: "Please check your vehicle before a long drive.", ja: "長距離ドライブの前に乗り物を確認してください。" } },
-                { word: "証拠", choices: ["evidence", "evident", "evil", "eventually"], answer: "evidence", example: { en: "The police found new evidence in the case.", ja: "警察はその事件で新しい証拠を見つけた。" } },
-                { word: "考慮する", choices: ["consider", "consist", "conclude", "consume"], answer: "consider", example: { en: "We need to consider all the options.", ja: "我々は全ての選択肢を考慮する必要がある。" } },
-                { word: "含む", choices: ["include", "invade", "insist", "income"], answer: "include", example: { en: "The price includes tax and service charge.", ja: "その価格には税金とサービス料が含まれています。" } },
-                { word: "達成する", choices: ["achieve", "archive", "active", "arrive"], answer: "achieve", example: { en: "She worked hard to achieve her goals.", ja: "彼女は目標を達成するために一生懸命働いた。" } },
-                { word: "絶対に", choices: ["absolutely", "abstractly", "accurately", "actually"], answer: "absolutely", example: { en: "Are you absolutely sure about this?", ja: "これについて絶対に確かですか？" } }
-            ];
-            
-            const motivationalMessages = [
-                "その調子！一歩ずつ、着実に力がついてるよ！🦉",
-                "ナイスチャレンジ！この積み重ねが、大きな自信に変わるよ！✨",
-                "よく頑張ってるね！今日の努力が、明日の合格につながる！ファイト！🔥",
-                "諦めない気持ちが一番の武器！君ならできる！💪",
-                "すごい集中力！この調子で、どんどん単語をマスターしよう！🎓"
-            ];
-            
-            const QUESTIONS_PER_QUIZ = 20;
-            const MISSED_THRESHOLD = 3; 
-            const TYPING_CHANCE = 0.2;
-            const PRIORITY_QUESTION_COUNT = 5;
-
-            let currentQuestionIndex = 0;
-            let score = 0;
-            let shuffledWords = [];
-            let currentCorrectAnswer = "";
-            let currentExample = null;
-            let progressChartInstance = null;
-            let englishVoice = null;
-            let missedWordsStats = {};
-
-            const mainMenu = document.getElementById('mainMenu');
-            const startQuizButton = document.getElementById('startQuizButton');
-            const motivationalMessageEl = document.getElementById('motivationalMessage');
-            const endOfMonthMessageEl = document.getElementById('endOfMonthMessage');
-            const mainMenuTargetDisplay = document.getElementById('mainMenuTargetDisplay');
-            const appContainer = document.getElementById('app-container');
-
-            const quizArea = document.getElementById('quizArea');
-            const resultArea = document.getElementById('resultArea');
-            const wordDisplay = document.getElementById('word');
-            const instructionText = document.getElementById('instructionText');
-            const optionsContainer = document.getElementById('options');
-            const typingArea = document.getElementById('typingArea');
-            const typingInput = document.getElementById('typingInput');
-            const submitTypingAnswerButton = document.getElementById('submitTypingAnswerButton');
-            const feedbackDisplay = document.getElementById('feedback');
-            const nextButton = document.getElementById('nextButton');
-            const restartButton = document.getElementById('restartButton');
-            const scoreDisplay = document.getElementById('score');
-            const questionNumberDisplay = document.getElementById('questionNumber');
-            const finalScoreDisplay = document.getElementById('finalScore');
-            const cumulativeScoreDisplay = document.getElementById('cumulativeScoreDisplay');
-            const monthlyTotalScoreDisplay = document.getElementById('monthlyTotalScoreDisplay');
-            const resultMessageDisplay = document.getElementById('resultMessage');
-            const yakinikuMessage = document.getElementById('yakinikuMessage');
-            const speakButton = document.getElementById('speakButton');
-            const exampleSentenceArea = document.getElementById('exampleSentenceArea');
-            const exampleEnDisplay = document.getElementById('exampleEn');
-            const exampleJaDisplay = document.getElementById('exampleJa');
-            const toggleGraphButton = document.getElementById('toggleGraphButton');
-            const graphDisplayArea = document.getElementById('graphDisplayArea');
-            const progressChartCanvas = document.getElementById('progressChart');
-            const quitQuizButton = document.getElementById('quitQuizButton');
-            const backToMenuButton = document.getElementById('backToMenuButton');
-            
-            const targetScoreSelect = document.getElementById('targetScoreSelect');
-            const saveTargetButton = document.getElementById('saveTargetButton');
-
-            const synth = window.speechSynthesis;
-            if (!synth) {
-                console.warn("Web Speech API is not supported in this browser.");
-                if(speakButton) speakButton.style.display = 'none';
-            } else {
-                function loadAndSetVoice() {
-                    const voices = synth.getVoices();
-                    englishVoice = voices.find(voice => voice.lang === 'en-US') || voices.find(voice => voice.lang.startsWith('en-'));
-                    if (!englishVoice) console.warn('No English voice found.');
-                }
-                loadAndSetVoice();
-                if (synth.onvoiceschanged !== undefined) {
-                    synth.onvoiceschanged = loadAndSetVoice;
-                }
-            }
-            
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
-
-            function speakWord(wordToSpeak) {
-                if (!synth || !wordToSpeak) return;
-                
-                if (synth.speaking) synth.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(wordToSpeak);
-                utterance.lang = 'en-US';
-                if (englishVoice) {
-                    utterance.voice = englishVoice;
-                }
-                utterance.pitch = 1;
-                utterance.rate = 0.9;
-                synth.speak(utterance);
-            }
-
-            const DAILY_SESSIONS_KEY = 'eiken2QuizDailySessions';
-            const WORD_STATS_KEY = 'eiken2QuizWordStats';
-            const CUMULATIVE_TARGET_KEY = 'eiken2QuizCumulativeTarget';
-            const CUMULATIVE_SCORE_KEY = 'eiken2QuizCumulativeScore';
-
-            function getFromStorage(key, defaultValue) {
-                const data = localStorage.getItem(key);
-                try {
-                    return data ? JSON.parse(data) : defaultValue;
-                } catch (e) {
-                    console.error("Could not parse JSON from localStorage for key:", key);
-                    return defaultValue;
-                }
-            }
-
-            function saveToStorage(key, value) {
-                localStorage.setItem(key, JSON.stringify(value));
-            }
-
-            function loadAllData() {
-                missedWordsStats = getFromStorage(WORD_STATS_KEY, {});
-                loadTargetScore();
-            }
-            
-            function loadTargetScore() {
-                const savedTarget = getFromStorage(CUMULATIVE_TARGET_KEY, 0);
-                targetScoreSelect.value = savedTarget;
-                
-                if (savedTarget > 0) {
-                    mainMenuTargetDisplay.textContent = `現在の累計目標: ${savedTarget}点`;
-                } else {
-                    mainMenuTargetDisplay.textContent = `目標を設定して学習を始めよう！`;
-                }
-            }
-
-            function saveTargetScore() {
-                const targetValue = parseInt(targetScoreSelect.value);
-                if (!isNaN(targetValue)) {
-                    saveToStorage(CUMULATIVE_TARGET_KEY, targetValue);
-                    alert('累計目標スコアを保存しました！');
-                    loadTargetScore();
-                } else {
-                    alert(`有効な目標スコアを選択してください。`);
-                }
-            }
-
-            function renderProgressChart() {
-                const sessionData = getFromStorage(DAILY_SESSIONS_KEY, {});
-                if (progressChartInstance) progressChartInstance.destroy();
-                if (!progressChartCanvas) return;
-                const ctx = progressChartCanvas.getContext('2d');
-                
-                const sortedDates = Object.keys(sessionData).sort((a,b) => new Date(a) - new Date(b));
-                const recentDates = sortedDates.slice(-10);
-
-                const labels = recentDates.map(date => {
-                    const dateObj = new Date(date);
-                    return `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
-                });
-                const dailyScores = recentDates.map(date => sessionData[date].highestScore);
-
-                if (recentDates.length === 0) {
-                     ctx.clearRect(0, 0, progressChartCanvas.width, progressChartCanvas.height);
-                     ctx.font = "16px 'Noto Sans JP', sans-serif";
-                     ctx.fillStyle = "#6b7280";
-                     ctx.textAlign = "center";
-                     ctx.fillText("まだ記録がありません。", progressChartCanvas.width / 2, 50);
-                    return;
-                }
-                
-                progressChartInstance = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels: labels, datasets: [{
-                        label: '日別最高スコア',
-                        data: dailyScores,
-                        backgroundColor: 'rgba(79, 70, 229, 0.7)',
-                        borderColor: 'rgba(79, 70, 229, 1)',
-                        borderWidth: 1, borderRadius: 4,
-                        hoverBackgroundColor: 'rgba(99, 102, 241, 0.8)'
-                    }]},
-                    options: {
-                        responsive: true, maintainAspectRatio: true,
-                        scales: { y: { beginAtZero: true, max: QUESTIONS_PER_QUIZ + 2 }, x: { ticks: { font: { family: "'Inter', 'Noto Sans JP', sans-serif" } } } },
-                        plugins: { legend: { display: true, labels: { font: { family: "'Inter', 'Noto Sans JP', sans-serif" } } }, tooltip: { titleFont: { family: "'Inter', 'Noto Sans JP', sans-serif" }, bodyFont: { family: "'Inter', 'Noto Sans JP', sans-serif" } } }
-                    }
-                });
-            }
-            
-            function showMainMenu() {
-                mainMenu.style.display = 'block';
-                appContainer.style.display = 'none';
-
-                const today = new Date();
-                if (today.getDate() >= 25) {
-                    endOfMonthMessageEl.textContent = "月末スパート！ラストスパートがんばろう！🔥";
-                    endOfMonthMessageEl.style.display = 'block';
-                } else {
-                    endOfMonthMessageEl.style.display = 'none';
-                }
-
-                let message;
-                if (Math.random() < 0.05) { 
-                    message = "誰よりもハイスコアを取った君は豪華焼肉をサオリからプレゼント";
-                } else {
-                    const randomIndex = Math.floor(Math.random() * motivationalMessages.length);
-                    message = motivationalMessages[randomIndex];
-                }
-                motivationalMessageEl.textContent = message;
-
-                loadTargetScore();
-            }
-
-            function startQuiz() {
-                mainMenu.style.display = 'none';
-                appContainer.style.display = 'block';
-
-                loadAllData();
-                
-                const priorityWords = [];
-                const regularWords = [];
-                const newWords = [];
-
-                wordList.forEach(word => {
-                    const missCount = missedWordsStats[word.answer];
-                    if (missCount === undefined) {
-                        newWords.push(word);
-                    } else if (missCount >= MISSED_THRESHOLD) {
-                        priorityWords.push(word);
-                    } else {
-                        regularWords.push(word);
-                    }
-                });
-
-                shuffleArray(priorityWords);
-                shuffleArray(newWords);
-                shuffleArray(regularWords);
-                
-                let finalQuizList = [];
-                const combinedPriority = [...priorityWords, ...newWords];
-                shuffleArray(combinedPriority);
-
-                finalQuizList.push(...combinedPriority.slice(0, PRIORITY_QUESTION_COUNT));
-
-                const remainingSlots = QUESTIONS_PER_QUIZ - finalQuizList.length;
-                const fillerWords = [...regularWords, ...combinedPriority.slice(PRIORITY_QUESTION_COUNT)];
-                shuffleArray(fillerWords);
-                
-                finalQuizList.push(...fillerWords.slice(0, remainingSlots));
-                
-                shuffledWords = shuffleArray(finalQuizList);
-
-
-                currentQuestionIndex = 0;
-                score = 0;
-                scoreDisplay.textContent = `スコア: ${score}`;
-                quizArea.style.display = 'block';
-                resultArea.style.display = 'none';
-                if(graphDisplayArea) graphDisplayArea.style.display = 'none';
-                toggleGraphButton.textContent = '進捗グラフを見る';
-                
-                nextButton.style.display = 'none';
-                if(quitQuizButton) quitQuizButton.style.display = 'inline-block';
-                if(speakButton) speakButton.style.display = 'none';
-                if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
-                feedbackDisplay.textContent = '';
-                loadQuestion();
-            }
-
-            function loadQuestion() {
-                if (currentQuestionIndex < shuffledWords.length) {
-                    const currentQuestion = shuffledWords[currentQuestionIndex];
-                    currentCorrectAnswer = currentQuestion.answer;
-                    currentExample = currentQuestion.example;
-                    wordDisplay.textContent = currentQuestion.word;
-                    questionNumberDisplay.textContent = `問題 ${currentQuestionIndex + 1} / ${shuffledWords.length}`;
-                    
-                    wordDisplay.classList.remove('missed-word');
-                    if (missedWordsStats[currentCorrectAnswer] && missedWordsStats[currentCorrectAnswer] >= MISSED_THRESHOLD) {
-                        wordDisplay.classList.add('missed-word');
-                    }
-
-                    const questionType = Math.random() < TYPING_CHANCE ? 'typing' : 'multiple-choice';
-
-                    if (questionType === 'typing') {
-                        optionsContainer.style.display = 'none';
-                        typingArea.style.display = 'block';
-                        typingInput.value = '';
-                        typingInput.disabled = false;
-                        submitTypingAnswerButton.disabled = false;
-                        typingInput.focus();
-                        instructionText.textContent = 'この単語の英語のスペルを入力してください';
-                    } else {
-                        typingArea.style.display = 'none';
-                        optionsContainer.style.display = 'grid';
-                        optionsContainer.innerHTML = '';
-                        instructionText.textContent = 'この単語の正しい英語のスペルを選んでください';
-
-                        const shuffledChoices = shuffleArray([...currentQuestion.choices]);
-                        shuffledChoices.forEach(choice => {
-                            const button = document.createElement('button');
-                            button.textContent = choice;
-                            button.classList.add('option-button', 'w-full', 'bg-white', 'text-gray-700', 'font-semibold', 'py-3', 'px-4', 'border', 'border-gray-300', 'rounded-lg', 'shadow', 'text-lg');
-                            button.setAttribute('lang', 'en');
-                            button.onclick = () => selectAnswer(choice, currentQuestion.answer);
-                            optionsContainer.appendChild(button);
-                        });
-                    }
-                    
-                    feedbackDisplay.textContent = '';
-                    nextButton.style.display = 'none';
-                    if(quitQuizButton) quitQuizButton.style.display = 'inline-block';
-                    if(speakButton) speakButton.style.display = 'none';
-                    if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
-                } else {
-                    showResults();
-                }
-            }
-            
-            function handleAnswer(isCorrect, correctAnswer) {
-                const wasMissedWord = missedWordsStats[correctAnswer] && missedWordsStats[correctAnswer] >= MISSED_THRESHOLD;
-                
-                if (isCorrect) {
-                    if (wasMissedWord) missedWordsStats[correctAnswer] = 0;
-                } else {
-                    missedWordsStats[correctAnswer] = (missedWordsStats[correctAnswer] || 0) + 1;
-                }
-                saveToStorage(WORD_STATS_KEY, missedWordsStats);
-                
-                speakWord(correctAnswer); 
-                if(speakButton) speakButton.style.display = 'inline-block'; 
-
-                if (isCorrect) {
-                    let points = 1;
-                    let feedbackText = '正解！🎉';
-                    
-                    if (wasMissedWord) {
-                        points++; 
-                        feedbackText = '苦手克服！+2点ボーナス！🥳';
-                    }
-                    
-                    score += points;
-                    feedbackDisplay.textContent = feedbackText;
-                    feedbackDisplay.classList.remove('text-red-500');
-                    feedbackDisplay.classList.add('text-green-500');
-                } else {
-                    feedbackDisplay.textContent = `不正解... 正解は「${correctAnswer}」です。`;
-                    feedbackDisplay.classList.remove('text-green-500');
-                    feedbackDisplay.classList.add('text-red-500');
-                }
-
-                if (currentExample && exampleSentenceArea && exampleEnDisplay && exampleJaDisplay) {
-                    exampleSentenceArea.style.display = 'block';
-                    exampleEnDisplay.textContent = currentExample.en;
-                    exampleJaDisplay.textContent = currentExample.ja;
-                }
-
-                scoreDisplay.textContent = `スコア: ${score}`;
-                nextButton.style.display = 'block';
-                if(quitQuizButton) quitQuizButton.style.display = 'none';
-            }
-            
-            function selectAnswer(selectedChoice, correctAnswer) {
-                const isCorrect = selectedChoice.toLowerCase() === correctAnswer.toLowerCase();
-                const buttons = optionsContainer.querySelectorAll('.option-button');
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    if (btn.textContent.toLowerCase() === correctAnswer.toLowerCase()) btn.classList.add('correct');
-                    else if (btn.textContent.toLowerCase() === selectedChoice.toLowerCase()) btn.classList.add('incorrect');
-                });
-                handleAnswer(isCorrect, correctAnswer);
-            }
-            
-            function checkTypingAnswer() {
-                const userAnswer = typingInput.value.trim().toLowerCase();
-                const isCorrect = userAnswer === currentCorrectAnswer.toLowerCase();
-                typingInput.disabled = true;
-                submitTypingAnswerButton.disabled = true;
-                handleAnswer(isCorrect, currentCorrectAnswer);
-            }
-
-            function showResults() {
-                quizArea.style.display = 'none';
-                resultArea.style.display = 'block';
-                
-                let cumulativeScore = getFromStorage(CUMULATIVE_SCORE_KEY, 0) + score;
-                saveToStorage(CUMULATIVE_SCORE_KEY, cumulativeScore);
-
-                const today = new Date().toISOString().split('T')[0];
-                let sessionData = getFromStorage(DAILY_SESSIONS_KEY, {});
-                const todayData = sessionData[today] || { highestScore: 0, totalScore: 0 };
-                if (score > todayData.highestScore) {
-                    todayData.highestScore = score;
-                }
-                todayData.totalScore += score;
-                sessionData[today] = todayData;
-                saveToStorage(DAILY_SESSIONS_KEY, sessionData);
-
-                let monthlyScore = 0;
-                const currentMonth = today.slice(0, 7);
-                for (const date in sessionData) {
-                    if (date.startsWith(currentMonth)) {
-                        monthlyScore += sessionData[date].totalScore;
-                    }
-                }
-
-                finalScoreDisplay.textContent = `今回のスコア: ${score} / ${shuffledWords.length}`;
-                cumulativeScoreDisplay.textContent = `総合累計スコア: ${cumulativeScore}点`;
-                monthlyTotalScoreDisplay.textContent = `今月の累計スコア: ${monthlyScore}点`;
-
-                let message = "";
-                const percentage = (score / shuffledWords.length) * 100;
-
-                if (percentage >= 80) message = "素晴らしいです！よくできました！🥳";
-                else if (percentage >= 60) message = "よく頑張りました！もう少し！👍";
-                else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
-                else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
-
-                const cumulativeTarget = getFromStorage(CUMULATIVE_TARGET_KEY, 0);
-                if (cumulativeTarget > 0) {
-                    if (cumulativeScore >= cumulativeTarget) {
-                        message += `\n\n累計目標 (${cumulativeTarget}点) 達成です！おめでとうございます！🎯`;
-                        yakinikuMessage.textContent = '総合計得点勝者の君には豪華焼肉!!';
-                        yakinikuMessage.style.display = 'block';
-                    } else {
-                        message += `\n\n累計目標 (${cumulativeTarget}点) まであと ${cumulativeTarget - cumulativeScore}点です。`;
-                        yakinikuMessage.style.display = 'none';
-                    }
-                }
-
-                resultMessageDisplay.textContent = message;
-                resultMessageDisplay.style.whiteSpace = 'pre-wrap';
-                
-                if(speakButton) speakButton.style.display = 'none';
-                if(exampleSentenceArea) exampleSentenceArea.style.display = 'none';
-                if(graphDisplayArea) graphDisplayArea.style.display = 'none';
-                toggleGraphButton.textContent = '進捗グラフを見る';
-                if(quitQuizButton) quitQuizButton.style.display = 'none';
-            }
-
-            nextButton.addEventListener('click', () => {
-                currentQuestionIndex++;
-                loadQuestion();
-            });
-
-            restartButton.addEventListener('click', showMainMenu);
-
-            if(speakButton) speakButton.addEventListener('click', () => speakWord(currentCorrectAnswer));
-            if(toggleGraphButton) toggleGraphButton.addEventListener('click', () => {
-                const isHidden = graphDisplayArea.style.display === 'none';
-                graphDisplayArea.style.display = isHidden ? 'block' : 'none';
-                toggleGraphButton.textContent = isHidden ? 'グラフを隠す' : '進捗グラフを見る';
-                if (isHidden) renderProgressChart();
-            });
-            if(quitQuizButton) quitQuizButton.addEventListener('click', showResults);
-            if(saveTargetButton) saveTargetButton.addEventListener('click', saveTargetScore);
-            if(submitTypingAnswerButton) submitTypingAnswerButton.addEventListener('click', checkTypingAnswer);
-            if(typingInput) typingInput.addEventListener('keypress', (e) => {
-                if(e.key === 'Enter' && !submitTypingAnswerButton.disabled) checkTypingAnswer();
-            });
-            if(startQuizButton) startQuizButton.addEventListener('click', startQuiz);
-            if(backToMenuButton) backToMenuButton.addEventListener('click', showMainMenu);
-            
-            showMainMenu();
-        });
-    </script>
-</body>
-</html>
- 
+                { word: "できる", choices: ["able", "about", "above", "abroad"], answer: "able", example: { en: "Are you able to swim?", ja: "あなたは泳ぐことができますか？" } },
+                { word: "～について；およそ", choices: ["about", "above", "abroad", "across"], answer: "about", example: { en: "Let's talk about your plan.", ja: "あなたの計画について話しましょう。" } },
+                { word: "～の上に", choices: ["above", "abroad", "across", "action"], answer: "above", example: { en: "The plane is flying above the clouds.", ja: "飛行機が雲の上を飛んでいます。" } },
+                { word: "海外へ", choices: ["abroad", "across", "action", "activity"], answer: "abroad", example: { en: "I want to study abroad someday.", ja: "いつか海外に留学したいです。" } },
+                { word: "～を横切って", choices: ["across", "action", "activity", "actor"], answer: "across", example: { en: "He swam across the river.", ja: "彼は川を泳いで渡った。" } },
+                { word: "行動", choices: ["action", "activity", "actor", "address"], answer: "action", example: { en: "We need to take immediate action.", ja: "私たちはすぐに行動を起こす必要がある。" } },
+                { word: "活動", choices: ["activity", "actor", "address", "adult"], answer: "activity", example: { en: "She enjoys outdoor activities.", ja: "彼女は野外活動を楽しんでいる。" } },
+                { word: "俳優", choices: ["actor", "address", "adult", "advice"], answer: "actor", example: { en: "He is a famous movie actor.", ja: "彼は有名な映画俳優です。" } },
+                { word: "住所", choices: ["address", "adult", "advice", "after"], answer: "address", example: { en: "Please write down your name and address.", ja: "あなたの名前と住所を書いてください。" } },
+                { word: "大人", choices: ["adult", "advice", "after", "again"], answer: "adult", example: { en: "This movie is for adults only.", ja: "この映画は大人向けです。" } },
+                { word: "助言", choices: ["advice", "after", "again", "age"], answer: "advice", example: { en: "Thank you for your good advice.", ja: "良い助言をありがとうございます。" } },
+                { word: "～の後で", choices: ["after", "again", "age", "ago"], answer: "after", example: { en: "Let's meet after school.", ja: "放課後に会いましょう。" } },
+                { word: "再び", choices: ["again", "age", "ago", "agree"], answer: "again", example: { en: "Please say that again.", ja: "もう一度それを言ってください。" } },
+                { word: "年齢", choices: ["age", "ago", "agree", "air"], answer: "age", example: { en: "What is your age?", ja: "あなたは何歳ですか？" } },
+                { word: "～前に", choices: ["ago", "agree", "air", "airport"], answer: "ago", example: { en: "I met him three years ago.", ja: "私は3年前に彼に会いました。" } },
+                { word: "同意する", choices: ["agree", "air", "airport", "album"], answer: "agree", example: { en: "I agree with your idea.", ja: "あなたの考えに同意します。" } },
+                { word: "空気", choices: ["air", "airport", "album", "all"], answer: "air", example: { en: "The air is clean in the mountains.", ja: "山の空気はきれいです。" } 
