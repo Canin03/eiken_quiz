@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級 英単語クイズ（グラフ表示改善版）</title>
+    <title>英検2級 英単語クイズ（フリーズ修正版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英検2級クイズ">
@@ -39,7 +39,7 @@
         #targetScoreSelect { width: 120px; padding: 0.5rem; border-radius: 0.375rem; border: 1px solid #d1d5db; text-align: center; margin: 0 0.5rem; }
         #saveTargetButton { background-color: #2563eb; color: white; }
         #saveTargetButton:hover { background-color: #1d4ed8; }
-        #currentTargetDisplay, #mainMenuTargetDisplay { margin-top: 0.5rem; font-size: 0.875rem; color: #4b5563; }
+        #mainMenuTargetDisplay { margin-top: 0.5rem; font-size: 0.875rem; color: #4b5563; }
         .score-display { font-size: 1.25rem; font-weight: 600; }
         #cumulativeScoreDisplay { color: #059669; /* green-600 */ }
         #monthlyTotalScoreDisplay { color: #4f46e5; /* indigo-600 */ }
@@ -364,7 +364,7 @@
 
                 const today = new Date();
                 if (today.getDate() >= 25) {
-                    endOfMonthMessageEl.textContent = "月末スパート！ラストスパートがんばろう！🔥";
+                    endOfMonthMessageEl.textContent = "月末スパート！ラストスパートがんばろう！ ";
                     endOfMonthMessageEl.style.display = 'block';
                 } else {
                     endOfMonthMessageEl.style.display = 'none';
@@ -386,6 +386,7 @@
                 mainMenu.style.display = 'none';
                 appContainer.style.display = 'block';
                 graphDisplayArea.style.display = 'none';
+                document.getElementById('quizAndResultContainer').style.display = 'block';
 
                 loadAllData();
                 
@@ -581,7 +582,7 @@
                 let message = "";
                 const percentage = (score / shuffledWords.length) * 100;
 
-                if (percentage >= 80) message = "素晴らしいです！よくできました！ ";
+                if (percentage >= 80) message = "素晴らしいです！よくできました！🥳";
                 else if (percentage >= 60) message = "よく頑張りました！もう少し！👍";
                 else if (percentage >= 40) message = "まずまずですね。復習も頑張りましょう！💪";
                 else message = "もっと頑張りましょう！繰り返し挑戦してみてください。📚";
@@ -607,10 +608,18 @@
                 if(quitQuizButton) quitQuizButton.style.display = 'none';
             }
 
-            function toggleGraph() {
+            function toggleGraph(fromMainMenu = false) {
                 const isHidden = graphDisplayArea.style.display === 'none';
+                if(fromMainMenu) {
+                    mainMenu.style.display = isHidden ? 'none' : 'block';
+                    appContainer.style.display = 'none';
+                } else {
+                    mainMenu.style.display = 'none';
+                    appContainer.style.display = 'block';
+                    document.getElementById('quizAndResultContainer').style.display = isHidden ? 'none' : 'block';
+                }
                 graphDisplayArea.style.display = isHidden ? 'block' : 'none';
-                mainMenu.style.display = isHidden ? 'none' : 'block';
+                
                 if (isHidden) renderProgressChart();
             }
 
@@ -622,24 +631,12 @@
             restartButton.addEventListener('click', showMainMenu);
 
             if(speakButton) speakButton.addEventListener('click', () => speakWord(currentCorrectAnswer));
-            if(mainMenuToggleGraphButton) mainMenuToggleGraphButton.addEventListener('click', toggleGraph);
-            if(appToggleGraphButton) appToggleGraphButton.addEventListener('click', () => {
-                quizArea.style.display = 'none';
-                resultArea.style.display = 'none';
-                graphDisplayArea.style.display = 'block';
-                renderProgressChart();
-            });
+            if(mainMenuToggleGraphButton) mainMenuToggleGraphButton.addEventListener('click', () => toggleGraph(true));
+            if(appToggleGraphButton) appToggleGraphButton.addEventListener('click', () => toggleGraph(false));
             if(closeGraphButton) closeGraphButton.addEventListener('click', () => {
                 graphDisplayArea.style.display = 'none';
-                // Decide where to go back to
-                if(mainMenu.style.display === 'block') {
-                    // Was on main menu, do nothing extra
-                } else if(quizArea.style.display === 'none' && resultArea.style.display === 'none') {
-                    showMainMenu();
-                }
-                else {
-                   quizArea.style.display = 'block'; // Or whichever state was active
-                }
+                // このボタンはグラフ画面にしかないので、メインメニューに戻すのが自然
+                showMainMenu();
             });
             if(quitQuizButton) quitQuizButton.addEventListener('click', showResults);
             if(saveTargetButton) saveTargetButton.addEventListener('click', saveTargetScore);
