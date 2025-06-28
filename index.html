@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級 英単語クイズ（フリーズ修正版）</title>
+    <title>英検2級 英単語クイズ（穴埋め問題追加版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英検2級クイズ">
@@ -15,7 +15,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- words.jsを先に読み込みます -->
     <script src="words.js" defer></script>
     <style>
         body { font-family: 'Inter', 'Noto Sans JP', sans-serif; }
@@ -41,12 +40,12 @@
         #saveTargetButton:hover { background-color: #1d4ed8; }
         #mainMenuTargetDisplay { margin-top: 0.5rem; font-size: 0.875rem; color: #4b5563; }
         .score-display { font-size: 1.25rem; font-weight: 600; }
-        #cumulativeScoreDisplay { color: #059669; /* green-600 */ }
-        #monthlyTotalScoreDisplay { color: #4f46e5; /* indigo-600 */ }
-        
+        #cumulativeScoreDisplay { color: #059669; }
+        #monthlyTotalScoreDisplay { color: #4f46e5; }
         @media (min-width: 640px) { .action-buttons-container { flex-direction: row; justify-content: center; } .action-buttons-container button { width: auto; } }
-        .missed-word { color: #ef4444; /* red-500 */ }
-        #endOfMonthMessage { color: #d97706; /* amber-600 */ font-weight: 600; }
+        .missed-word { color: #ef4444; }
+        #endOfMonthMessage { color: #d97706; font-weight: 600; }
+        #fillInBlankSentence { line-height: 1.6; }
     </style>
 </head>
 <body class="bg-gray-100 px-4 py-8 flex items-center justify-center min-h-screen">
@@ -116,6 +115,11 @@
                              <input type="text" id="typingInput" placeholder="英語のスペルを入力" lang="en" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg" autocapitalize="off" autocorrect="off" spellcheck="false">
                              <button id="submitTypingAnswerButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">解答する</button>
                         </div>
+                        <div id="fillInBlankArea" class="space-y-3" style="display: none;">
+                            <p id="fillInBlankSentence" class="text-xl text-center p-4 bg-gray-100 rounded-lg shadow-inner"></p>
+                            <input type="text" id="fillInBlankInput" placeholder="空欄に入る単語を入力" lang="en" class="w-full p-3 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-lg" autocapitalize="off" autocorrect="off" spellcheck="false">
+                            <button id="submitFillInBlankButton" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">解答する</button>
+                        </div>
                     </div>
 
                     <div id="feedback" class="feedback-message text-center text-2xl font-semibold mt-4 japanese-text">
@@ -179,6 +183,7 @@
             const QUESTIONS_PER_QUIZ = 20;
             const MISSED_THRESHOLD = 3; 
             const TYPING_CHANCE = 0.2;
+            const FILL_IN_BLANK_CHANCE = 0.2;
             const PRIORITY_QUESTION_COUNT = 5;
 
             let currentQuestionIndex = 0;
@@ -205,6 +210,10 @@
             const typingArea = document.getElementById('typingArea');
             const typingInput = document.getElementById('typingInput');
             const submitTypingAnswerButton = document.getElementById('submitTypingAnswerButton');
+            const fillInBlankArea = document.getElementById('fillInBlankArea');
+            const fillInBlankSentence = document.getElementById('fillInBlankSentence');
+            const fillInBlankInput = document.getElementById('fillInBlankInput');
+            const submitFillInBlankButton = document.getElementById('submitFillInBlankButton');
             const feedbackDisplay = document.getElementById('feedback');
             const nextButton = document.getElementById('nextButton');
             const restartButton = document.getElementById('restartButton');
@@ -364,7 +373,7 @@
 
                 const today = new Date();
                 if (today.getDate() >= 25) {
-                    endOfMonthMessageEl.textContent = "月末スパート！ラストスパートがんばろう！ ";
+                    endOfMonthMessageEl.textContent = "月末スパート！ラストスパートがんばろう！🔥";
                     endOfMonthMessageEl.style.display = 'block';
                 } else {
                     endOfMonthMessageEl.style.display = 'none';
@@ -451,18 +460,37 @@
                         wordDisplay.classList.add('missed-word');
                     }
 
-                    const questionType = Math.random() < TYPING_CHANCE ? 'typing' : 'multiple-choice';
+                    const rand = Math.random();
+                    let questionType;
+                    if (rand < FILL_IN_BLANK_CHANCE) {
+                        questionType = 'fill-in-the-blank';
+                    } else if (rand < FILL_IN_BLANK_CHANCE + TYPING_CHANCE) {
+                        questionType = 'typing';
+                    } else {
+                        questionType = 'multiple-choice';
+                    }
+
+                    optionsContainer.style.display = 'none';
+                    typingArea.style.display = 'none';
+                    fillInBlankArea.style.display = 'none';
 
                     if (questionType === 'typing') {
-                        optionsContainer.style.display = 'none';
                         typingArea.style.display = 'block';
                         typingInput.value = '';
                         typingInput.disabled = false;
                         submitTypingAnswerButton.disabled = false;
                         typingInput.focus();
                         instructionText.textContent = 'この単語の英語のスペルを入力してください';
+                    } else if (questionType === 'fill-in-the-blank') {
+                        fillInBlankArea.style.display = 'block';
+                        const gappedSentence = currentExample.en.replace(new RegExp(currentCorrectAnswer, 'gi'), '_______');
+                        fillInBlankSentence.innerHTML = `${gappedSentence}`;
+                        fillInBlankInput.value = '';
+                        fillInBlankInput.disabled = false;
+                        submitFillInBlankButton.disabled = false;
+                        fillInBlankInput.focus();
+                        instructionText.textContent = '空欄に当てはまる単語をスペル入力してください。';
                     } else {
-                        typingArea.style.display = 'none';
                         optionsContainer.style.display = 'grid';
                         optionsContainer.innerHTML = '';
                         instructionText.textContent = 'この単語の正しい英語のスペルを選んでください';
@@ -542,11 +570,11 @@
                 handleAnswer(isCorrect, correctAnswer);
             }
             
-            function checkTypingAnswer() {
-                const userAnswer = typingInput.value.trim().toLowerCase();
+            function checkTypingAnswer(inputEl, submitBtn) {
+                const userAnswer = inputEl.value.trim().toLowerCase();
                 const isCorrect = userAnswer === currentCorrectAnswer.toLowerCase();
-                typingInput.disabled = true;
-                submitTypingAnswerButton.disabled = true;
+                inputEl.disabled = true;
+                submitBtn.disabled = true;
                 handleAnswer(isCorrect, currentCorrectAnswer);
             }
 
@@ -610,18 +638,23 @@
 
             function toggleGraph(fromMainMenu = false) {
                 const isHidden = graphDisplayArea.style.display === 'none';
-                if(fromMainMenu) {
+                if (fromMainMenu) {
                     mainMenu.style.display = isHidden ? 'none' : 'block';
                     appContainer.style.display = 'none';
                 } else {
-                    mainMenu.style.display = 'none';
-                    appContainer.style.display = 'block';
                     document.getElementById('quizAndResultContainer').style.display = isHidden ? 'none' : 'block';
                 }
                 graphDisplayArea.style.display = isHidden ? 'block' : 'none';
-                
                 if (isHidden) renderProgressChart();
             }
+
+            function closeGraphAndReturn() {
+                 graphDisplayArea.style.display = 'none';
+                if (mainMenu.style.display === 'none') {
+                    appContainer.style.display = 'block';
+                    document.getElementById('quizAndResultContainer').style.display = 'block';
+                }
+             }
 
             nextButton.addEventListener('click', () => {
                 currentQuestionIndex++;
@@ -633,17 +666,19 @@
             if(speakButton) speakButton.addEventListener('click', () => speakWord(currentCorrectAnswer));
             if(mainMenuToggleGraphButton) mainMenuToggleGraphButton.addEventListener('click', () => toggleGraph(true));
             if(appToggleGraphButton) appToggleGraphButton.addEventListener('click', () => toggleGraph(false));
-            if(closeGraphButton) closeGraphButton.addEventListener('click', () => {
-                graphDisplayArea.style.display = 'none';
-                // このボタンはグラフ画面にしかないので、メインメニューに戻すのが自然
-                showMainMenu();
-            });
+            if(closeGraphButton) closeGraphButton.addEventListener('click', showMainMenu);
             if(quitQuizButton) quitQuizButton.addEventListener('click', showResults);
             if(saveTargetButton) saveTargetButton.addEventListener('click', saveTargetScore);
-            if(submitTypingAnswerButton) submitTypingAnswerButton.addEventListener('click', checkTypingAnswer);
+            
+            if(submitTypingAnswerButton) submitTypingAnswerButton.addEventListener('click', () => checkTypingAnswer(typingInput, submitTypingAnswerButton));
             if(typingInput) typingInput.addEventListener('keypress', (e) => {
-                if(e.key === 'Enter' && !submitTypingAnswerButton.disabled) checkTypingAnswer();
+                if(e.key === 'Enter' && !submitTypingAnswerButton.disabled) checkTypingAnswer(typingInput, submitTypingAnswerButton);
             });
+            if(submitFillInBlankButton) submitFillInBlankButton.addEventListener('click', () => checkTypingAnswer(fillInBlankInput, submitFillInBlankButton));
+            if(fillInBlankInput) fillInBlankInput.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter' && !submitFillInBlankButton.disabled) checkTypingAnswer(fillInBlankInput, submitFillInBlankButton);
+            });
+
             if(startQuizButton) startQuizButton.addEventListener('click', startQuiz);
             if(backToMenuButton) backToMenuButton.addEventListener('click', showMainMenu);
             
@@ -652,4 +687,3 @@
     </script>
 </body>
 </html>
- 
