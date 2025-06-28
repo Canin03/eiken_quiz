@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>英検2級 英単語クイズ（穴埋め問題改善版）</title>
+    <title>英検2級 英単語クイズ（UI改善・最終版）</title>
     
     <!-- ▼▼▼ ホーム画面アイコン用の設定 ▼▼▼ -->
     <meta name="apple-mobile-web-app-title" content="英検2級クイズ">
@@ -92,9 +92,14 @@
                 <button id="backToMenuButton" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
                     メインメニューに戻る
                 </button>
-                <button id="appToggleGraphButton" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
-                    進捗グラフ
-                </button>
+                <div class="flex gap-x-2">
+                     <button id="quitQuizButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
+                        クイズを終了
+                    </button>
+                    <button id="appToggleGraphButton" class="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-150 ease-in-out japanese-text">
+                        進捗グラフ
+                    </button>
+                </div>
             </header>
 
             <div id="quizAndResultContainer" class="mt-6">
@@ -108,7 +113,7 @@
                         <p id="questionText" class="text-4xl font-bold text-gray-700 japanese-text"></p>
                         <p id="questionHint" class="text-base text-gray-600 mt-2 japanese-text"></p>
                         <p id="instructionText" class="text-sm text-gray-500 mt-2 japanese-text"></p>
-                        <button id="speakButton">🔊 発音を聞く</button>
+                        <button id="speakButton">  発音を聞く</button>
                     </div>
 
                     <div id="interactionArea" class="mt-6">
@@ -129,9 +134,6 @@
                     </div>
                     
                     <div class="action-buttons-container">
-                        <button id="quitQuizButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text">
-                            クイズを終了
-                        </button>
                         <button id="nextButton" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-150 ease-in-out w-full japanese-text" style="display: none;">次の問題へ</button>
                     </div>
                 </div>
@@ -452,6 +454,7 @@
                     questionText.classList.remove('text-2xl');
                     questionText.classList.add('text-4xl');
                     questionHint.style.display = 'none';
+                    questionText.textContent = currentQuestion.word;
 
                     wordDisplay.classList.remove('missed-word');
                     if (missedWordsStats[currentCorrectAnswer] && missedWordsStats[currentCorrectAnswer] >= MISSED_THRESHOLD) {
@@ -472,7 +475,6 @@
                     typingArea.style.display = 'none';
 
                     if (questionType === 'typing') {
-                        questionText.textContent = currentQuestion.word;
                         typingArea.style.display = 'block';
                         typingInput.value = '';
                         typingInput.disabled = false;
@@ -505,7 +507,6 @@
                             optionsContainer.appendChild(button);
                         });
                     } else {
-                        questionText.textContent = currentQuestion.word;
                         optionsContainer.style.display = 'grid';
                         optionsContainer.innerHTML = '';
                         instructionText.textContent = 'この単語の正しい英語のスペルを選んでください';
@@ -689,10 +690,8 @@
             if(typingInput) typingInput.addEventListener('keypress', (e) => {
                 if(e.key === 'Enter' && !submitTypingAnswerButton.disabled) checkTypingAnswer(typingInput, submitTypingAnswerButton);
             });
-            if(submitFillInBlankButton) submitFillInBlankButton.addEventListener('click', () => checkTypingAnswer(fillInBlankInput, submitFillInBlankButton));
-            if(fillInBlankInput) fillInBlankInput.addEventListener('keypress', (e) => {
-                if(e.key === 'Enter' && !submitFillInBlankButton.disabled) checkTypingAnswer(fillInBlankInput, submitFillInBlankButton);
-            });
+            if(submitFillInBlankButton) submitFillInBlankButton.addEventListener('click', () => { /* This event is not used for 4-choice fill-in-the-blank */ });
+            if(fillInBlankInput) fillInBlankInput.addEventListener('keypress', (e) => { /* This event is not used for 4-choice fill-in-the-blank */ });
 
             if(startQuizButton) startQuizButton.addEventListener('click', startQuiz);
             if(backToMenuButton) backToMenuButton.addEventListener('click', showMainMenu);
@@ -702,3 +701,4 @@
     </script>
 </body>
 </html>
+ 
